@@ -9,11 +9,7 @@ interface DashboardHeaderProps {
   onMenuToggle: () => void;
 }
 
-export default function DashboardHeader({
-  userName,
-  userRole,
-  onMenuToggle,
-}: DashboardHeaderProps) {
+export default function DashboardHeader({ userName, userRole, onMenuToggle }: DashboardHeaderProps) {
   return (
     <header
       style={{
@@ -27,34 +23,37 @@ export default function DashboardHeader({
         position: "sticky",
         top: 0,
         zIndex: 30,
+        gap: "0.75rem",
       }}
     >
-      {/* Left: Mobile menu + breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-        <button
-          onClick={onMenuToggle}
-          className="mobile-menu-toggle"
-          style={{
-            display: "none",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "40px",
-            height: "40px",
-            borderRadius: "10px",
-            border: "1px solid var(--color-neutral-200)",
-            background: "white",
-            cursor: "pointer",
-            color: "var(--text-secondary)",
-          }}
-        >
-          <Menu size={20} />
-        </button>
-      </div>
+      {/* Left: Mobile menu */}
+      <button
+        onClick={onMenuToggle}
+        className="mobile-menu-btn"
+        style={{
+          display: "none",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "40px",
+          height: "40px",
+          borderRadius: "10px",
+          border: "1px solid var(--color-neutral-200)",
+          background: "white",
+          cursor: "pointer",
+          color: "var(--text-secondary)",
+          flexShrink: 0,
+        }}
+      >
+        <Menu size={20} />
+      </button>
+
+      <div style={{ flex: 1 }} />
 
       {/* Right: User info + logout */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
         {/* Role Badge */}
         <div
+          className="role-badge"
           style={{
             display: "flex",
             alignItems: "center",
@@ -63,41 +62,22 @@ export default function DashboardHeader({
             borderRadius: "20px",
             fontSize: "0.75rem",
             fontWeight: 600,
-            background:
-              userRole === "ADMIN"
-                ? "var(--color-gold-50)"
-                : "var(--color-primary-50)",
-            color:
-              userRole === "ADMIN"
-                ? "var(--color-gold-700)"
-                : "var(--color-primary-700)",
-            border: `1px solid ${
-              userRole === "ADMIN"
-                ? "var(--color-gold-200)"
-                : "var(--color-primary-200)"
-            }`,
+            background: userRole === "ADMIN" ? "var(--color-gold-50)" : "var(--color-primary-50)",
+            color: userRole === "ADMIN" ? "var(--color-gold-700)" : "var(--color-primary-700)",
+            border: `1px solid ${userRole === "ADMIN" ? "var(--color-gold-200)" : "var(--color-primary-200)"}`,
+            whiteSpace: "nowrap",
           }}
         >
-          {userRole === "ADMIN" ? (
-            <Shield size={12} />
-          ) : (
-            <GraduationCap size={12} />
-          )}
+          {userRole === "ADMIN" ? <Shield size={12} /> : <GraduationCap size={12} />}
           {userRole}
         </div>
 
-        {/* User Name */}
-        <span
-          style={{
-            fontSize: "0.875rem",
-            fontWeight: 600,
-            color: "var(--text-primary)",
-          }}
-        >
+        {/* User Name - hide on very small screens */}
+        <span className="user-name" style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
           {userName}
         </span>
 
-        {/* Logout Button */}
+        {/* Logout */}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           style={{
@@ -112,19 +92,23 @@ export default function DashboardHeader({
             border: "1px solid #fecaca",
             borderRadius: "10px",
             cursor: "pointer",
-            transition: "all 0.2s ease",
+            whiteSpace: "nowrap",
           }}
         >
           <LogOut size={14} />
-          Keluar
+          <span className="logout-text">Keluar</span>
         </button>
       </div>
 
       <style jsx global>{`
         @media (max-width: 768px) {
-          .mobile-menu-toggle {
-            display: flex !important;
-          }
+          .mobile-menu-btn { display: flex !important; }
+          .user-name { display: none !important; }
+          header { padding: 0 1rem !important; }
+        }
+        @media (max-width: 400px) {
+          .role-badge { display: none !important; }
+          .logout-text { display: none !important; }
         }
       `}</style>
     </header>

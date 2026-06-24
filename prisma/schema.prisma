@@ -64,6 +64,7 @@ model User {
   laporanHarian   LaporanHarian[]
   jadwalMentor    Jadwal[]           @relation("MentorJadwal")
   catatanBulanan  CatatanMentorBulanan[]
+  bonusMentor     BonusMentor[]
 
   @@index([role])
   @@index([isAktif])
@@ -111,6 +112,8 @@ model Jadwal {
   tanggalMulai   DateTime
   tanggalSelesai DateTime?
   isAktif        Boolean   @default(true)
+  feeMengajar    Decimal   @default(0) @db.Decimal(12, 2) // Fee per sesi
+  transportFee   Decimal   @default(0) @db.Decimal(12, 2) // Uang transport per sesi
   catatan        String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -261,4 +264,21 @@ model AuditLog {
   @@index([entity, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model BonusMentor {
+  id          String   @id @default(cuid())
+  mentorId    String
+  bulan       Int
+  tahun       Int
+  jumlah      Decimal  @db.Decimal(12, 2)
+  keterangan  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mentor      User     @relation(fields: [mentorId], references: [id])
+
+  @@index([mentorId])
+  @@index([bulan, tahun])
+  @@map("bonus_mentor")
 }
