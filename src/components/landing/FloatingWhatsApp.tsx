@@ -3,7 +3,7 @@
 import { MessageCircle } from "lucide-react";
 
 export default function FloatingWhatsApp() {
-  const waNumber = process.env.NEXT_PUBLIC_WA_NUMBER || "6281234567890";
+  const waNumber = "6285640817894";
 
   return (
     <a

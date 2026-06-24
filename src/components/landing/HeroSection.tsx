@@ -9,7 +9,7 @@ const stats = [
 ];
 
 export default function HeroSection() {
-  const waNumber = process.env.NEXT_PUBLIC_WA_NUMBER || "6281234567890";
+  const waNumber = "6285640817894";
 
   return (
     <section
@@ -132,9 +132,9 @@ export default function HeroSection() {
             animationDelay: "0.2s",
           }}
         >
-          Bimbel Al Ruumi hadir dengan metode pembelajaran yang efektif, 
-          mentor berpengalaman, dan pendekatan Islami yang membentuk karakter 
-          serta prestasi akademik siswa.
+          Bimbel Al Ruumi hadir dengan metode pembelajaran yang efektif,
+          mentor berakhlak mulia, dan pendekatan Islami yang membentuk akhlakul karimah
+          serta cemerlang dalam pembelajaran.
         </p>
 
         {/* CTA Buttons */}
