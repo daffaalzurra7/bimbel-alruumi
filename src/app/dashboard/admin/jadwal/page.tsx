@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, Plus, X, Loader2, Trash2 } from "lucide-react";
+import { Calendar, Plus, X, Loader2, Trash2, Pencil, Save } from "lucide-react";
 
 interface Mentor { id: string; nama: string; }
 interface Siswa { id: string; namaLengkap: string; jenjang: string; kelas: string; }
@@ -12,6 +12,8 @@ interface Jadwal {
   jamSelesai: string;
   mataPelajaran: string[];
   catatan: string | null;
+  mentorId: string;
+  siswaId: string;
   siswa: { namaLengkap: string; jenjang: string; kelas: string };
   mentor: { nama: string };
 }
@@ -27,6 +29,9 @@ export default function KelolaJadwalPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Form state
+  const [editMode, setEditMode] = useState<"create" | "edit">("create");
+  const [editJadwalId, setEditJadwalId] = useState<string | null>(null);
   const [siswaId, setSiswaId] = useState("");
   const [mentorId, setMentorId] = useState("");
   const [hariMengajar, setHariMengajar] = useState<string[]>([]);
@@ -49,22 +54,52 @@ export default function KelolaJadwalPage() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const resetForm = () => {
+    setSiswaId(""); setMentorId(""); setHariMengajar([]);
+    setJamMulai("08:00"); setJamSelesai("09:30");
+    setMataPelajaran(""); setCatatan("");
+    setEditMode("create"); setEditJadwalId(null);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setShowForm(true);
+    setError("");
+  };
+
+  const openEdit = (j: Jadwal) => {
+    setEditMode("edit");
+    setEditJadwalId(j.id);
+    setSiswaId(j.siswaId);
+    setMentorId(j.mentorId);
+    setHariMengajar([...j.hariMengajar]);
+    setJamMulai(j.jamMulai);
+    setJamSelesai(j.jamSelesai);
+    setMataPelajaran(j.mataPelajaran.join(", "));
+    setCatatan(j.catatan || "");
+    setShowForm(true);
+    setError("");
+  };
+
   const toggleHari = (hari: string) => {
     setHariMengajar((prev) => prev.includes(hari) ? prev.filter((h) => h !== hari) : [...prev, hari]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (hariMengajar.length === 0) { setError("Pilih minimal 1 hari mengajar"); return; }
     setFormLoading(true); setError("");
     try {
       const mapel = mataPelajaran.split(",").map((s) => s.trim()).filter(Boolean);
-      const res = await fetch("/api/jadwal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ siswaId, mentorId, hariMengajar, jamMulai, jamSelesai, mataPelajaran: mapel, catatan: catatan || null }),
-      });
+      const payload = { siswaId, mentorId, hariMengajar, jamMulai, jamSelesai, mataPelajaran: mapel, catatan: catatan || null };
+
+      const url = editMode === "edit" ? `/api/jadwal/${editJadwalId}` : "/api/jadwal";
+      const method = editMode === "edit" ? "PATCH" : "POST";
+
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) { const d = await res.json(); setError(d.error?.message || "Gagal"); return; }
-      setShowForm(false); setSiswaId(""); setMentorId(""); setHariMengajar([]); setMataPelajaran(""); setCatatan("");
+      setShowForm(false);
+      resetForm();
       fetchAll();
     } catch { setError("Kesalahan jaringan"); }
     finally { setFormLoading(false); }
@@ -76,8 +111,8 @@ export default function KelolaJadwalPage() {
     catch (err) { console.error(err); }
   };
 
-  const inputStyle = { width: "100%", padding: "0.75rem 1rem", border: "2px solid var(--color-neutral-200)", borderRadius: "12px", fontSize: "0.9375rem", outline: "none", fontFamily: "inherit" };
-  const labelStyle = { display: "block" as const, fontSize: "0.8125rem", fontWeight: 600 as const, color: "var(--text-primary)", marginBottom: "0.5rem" };
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "0.75rem 1rem", border: "2px solid var(--color-neutral-200)", borderRadius: "12px", fontSize: "0.875rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const labelStyle: React.CSSProperties = { display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem" };
 
   return (
     <div>
@@ -86,17 +121,26 @@ export default function KelolaJadwalPage() {
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, fontFamily: "var(--font-outfit), sans-serif", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Calendar size={24} style={{ color: "var(--color-primary-500)" }} /> Kelola Jadwal
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>Assign mentor ke siswa dengan jadwal mengajar.</p>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>Assign & edit jadwal mentor-siswa. Klik ✏️ untuk pindah jadwal/mentor.</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.75rem 1.25rem", fontWeight: 600, color: "white", background: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", boxShadow: "0 4px 14px rgba(13,146,85,0.35)" }}>
+        <button onClick={showForm ? () => { setShowForm(false); resetForm(); } : openCreate} style={{ padding: "0.75rem 1.25rem", fontWeight: 600, color: "white", background: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", boxShadow: "0 4px 14px rgba(13,146,85,0.35)" }}>
           {showForm ? <X size={16} /> : <Plus size={16} />} {showForm ? "Tutup" : "Tambah Jadwal"}
         </button>
       </div>
 
+      {/* Form — Create & Edit */}
       {showForm && (
-        <div style={{ background: "white", borderRadius: "20px", padding: "2rem", border: "1px solid var(--color-neutral-100)", boxShadow: "var(--shadow-sm)", marginBottom: "2rem" }}>
+        <div style={{ background: "white", borderRadius: "20px", padding: "1.5rem", border: `2px solid ${editMode === "edit" ? "var(--color-gold-300)" : "var(--color-neutral-100)"}`, boxShadow: "var(--shadow-sm)", marginBottom: "2rem" }}>
+          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1.25rem" }}>
+            {editMode === "edit" ? "✏️ Edit Jadwal" : "Tambah Jadwal Baru"}
+            {editMode === "edit" && (
+              <span style={{ fontSize: "0.8125rem", fontWeight: 400, color: "var(--text-secondary)", marginLeft: "0.5rem" }}>
+                — Bisa pindah mentor, ubah hari & jam
+              </span>
+            )}
+          </h3>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1.25rem", marginBottom: "1.25rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
               <div>
                 <label style={labelStyle}>Siswa *</label>
                 <select value={siswaId} onChange={(e) => setSiswaId(e.target.value)} required style={{ ...inputStyle, background: "white" }}>
@@ -105,8 +149,10 @@ export default function KelolaJadwalPage() {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Mentor *</label>
-                <select value={mentorId} onChange={(e) => setMentorId(e.target.value)} required style={{ ...inputStyle, background: "white" }}>
+                <label style={{ ...labelStyle, color: editMode === "edit" ? "var(--color-gold-700)" : "var(--text-primary)" }}>
+                  Mentor * {editMode === "edit" && "🔄"}
+                </label>
+                <select value={mentorId} onChange={(e) => setMentorId(e.target.value)} required style={{ ...inputStyle, background: "white", borderColor: editMode === "edit" ? "var(--color-gold-400)" : "var(--color-neutral-200)" }}>
                   <option value="">Pilih mentor...</option>
                   {mentors.map((m) => <option key={m.id} value={m.id}>{m.nama}</option>)}
                 </select>
@@ -126,17 +172,19 @@ export default function KelolaJadwalPage() {
                   ))}
                 </div>
               </div>
-              <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Mata Pelajaran * (pisahkan dengan koma)</label><input value={mataPelajaran} onChange={(e) => setMataPelajaran(e.target.value)} required style={inputStyle} placeholder="Matematika, Fisika, Kimia" /></div>
+              <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Mata Pelajaran * (pisah dengan koma)</label><input value={mataPelajaran} onChange={(e) => setMataPelajaran(e.target.value)} required style={inputStyle} placeholder="Matematika, Fisika, Kimia" /></div>
               <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Catatan</label><input value={catatan} onChange={(e) => setCatatan(e.target.value)} style={inputStyle} placeholder="Catatan tambahan..." /></div>
             </div>
             {error && <div style={{ padding: "0.75rem 1rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "12px", color: "#dc2626", fontSize: "0.875rem", marginBottom: "1rem" }}>{error}</div>}
-            <button type="submit" disabled={formLoading} style={{ padding: "0.75rem 1.5rem", fontWeight: 700, color: "white", background: formLoading ? "var(--color-neutral-400)" : "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: formLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              {formLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} {formLoading ? "Menyimpan..." : "Simpan Jadwal"}
+            <button type="submit" disabled={formLoading} style={{ padding: "0.75rem 1.5rem", fontWeight: 700, color: "white", background: formLoading ? "var(--color-neutral-400)" : editMode === "edit" ? "linear-gradient(135deg, var(--color-gold-500), var(--color-gold-700))" : "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: formLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              {formLoading ? <Loader2 size={16} className="animate-spin" /> : editMode === "edit" ? <Save size={16} /> : <Plus size={16} />}
+              {formLoading ? "Menyimpan..." : editMode === "edit" ? "Update Jadwal" : "Simpan Jadwal"}
             </button>
           </form>
         </div>
       )}
 
+      {/* Table */}
       <div style={{ background: "white", borderRadius: "20px", border: "1px solid var(--color-neutral-100)", boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
         {loading ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Memuat...</div>
@@ -144,24 +192,33 @@ export default function KelolaJadwalPage() {
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Belum ada jadwal.</div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: "700px" }}>
               <thead>
                 <tr style={{ background: "var(--bg-secondary)" }}>
                   {["Siswa", "Mentor", "Hari", "Jam", "Mata Pelajaran", "Aksi"].map((h) => (
-                    <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid var(--color-neutral-100)" }}>{h}</th>
+                    <th key={h} style={{ padding: "0.75rem 0.875rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid var(--color-neutral-100)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {jadwalList.map((j) => (
                   <tr key={j.id} style={{ borderBottom: "1px solid var(--color-neutral-100)" }}>
-                    <td style={{ padding: "0.875rem 1rem", fontWeight: 600 }}>{j.siswa.namaLengkap} <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>({j.siswa.jenjang}-{j.siswa.kelas})</span></td>
-                    <td style={{ padding: "0.875rem 1rem" }}>{j.mentor.nama}</td>
-                    <td style={{ padding: "0.875rem 1rem" }}>{j.hariMengajar.join(", ")}</td>
-                    <td style={{ padding: "0.875rem 1rem" }}>{j.jamMulai}—{j.jamSelesai}</td>
-                    <td style={{ padding: "0.875rem 1rem" }}>{j.mataPelajaran.join(", ")}</td>
-                    <td style={{ padding: "0.875rem 1rem" }}>
-                      <button onClick={() => handleDelete(j.id)} title="Nonaktifkan" style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: "0.25rem" }}><Trash2 size={16} /></button>
+                    <td style={{ padding: "0.75rem 0.875rem", fontWeight: 600 }}>{j.siswa.namaLengkap} <span style={{ fontSize: "0.6875rem", color: "var(--text-secondary)" }}>({j.siswa.jenjang}-{j.siswa.kelas})</span></td>
+                    <td style={{ padding: "0.75rem 0.875rem" }}>{j.mentor.nama}</td>
+                    <td style={{ padding: "0.75rem 0.875rem" }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
+                        {j.hariMengajar.map((h) => (
+                          <span key={h} style={{ padding: "0.125rem 0.5rem", background: "var(--color-primary-50)", color: "var(--color-primary-700)", borderRadius: "6px", fontSize: "0.6875rem", fontWeight: 600 }}>{h}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td style={{ padding: "0.75rem 0.875rem", whiteSpace: "nowrap" }}>{j.jamMulai}—{j.jamSelesai}</td>
+                    <td style={{ padding: "0.75rem 0.875rem" }}>{j.mataPelajaran.join(", ")}</td>
+                    <td style={{ padding: "0.75rem 0.875rem" }}>
+                      <div style={{ display: "flex", gap: "0.375rem" }}>
+                        <button onClick={() => openEdit(j)} title="Edit Jadwal" style={{ background: "var(--color-primary-50)", border: "1px solid var(--color-primary-200)", borderRadius: "8px", cursor: "pointer", color: "var(--color-primary-600)", padding: "0.375rem", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={14} /></button>
+                        <button onClick={() => handleDelete(j.id)} title="Nonaktifkan" style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", cursor: "pointer", color: "#dc2626", padding: "0.375rem", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+                      </div>
                     </td>
                   </tr>
                 ))}
