@@ -17,8 +17,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   // 'standalone' untuk Docker build yang efisien (self-hosted)
-  // Vercel otomatis mengabaikan setting ini
-  output: "standalone",
+  // Nonaktifkan jika sedang dideploy di Vercel untuk menghindari 404
+  output: process.env.VERCEL ? undefined : "standalone",
 
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
