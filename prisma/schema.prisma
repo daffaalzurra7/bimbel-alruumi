@@ -1,0 +1,263 @@
+// Bimbel Al Ruumi — Database Schema
+// Production-ready dengan soft delete, audit fields, dan database indexes
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  ADMIN
+  MENTOR
+  STAFF
+}
+
+enum JenjangSiswa {
+  SD
+  SMP
+  SMA
+}
+
+enum StatusAbsensiSiswa {
+  HADIR
+  IZIN
+  SAKIT
+  ALPA
+}
+
+enum StatusSiswa {
+  AKTIF
+  NONAKTIF
+  CALON_SISWA
+}
+
+enum StatusPembayaran {
+  MENUNGGU_VERIFIKASI
+  TERVERIFIKASI
+  DITOLAK
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id          String    @id @default(cuid())
+  nama        String
+  email       String    @unique
+  password    String
+  role        Role      @default(MENTOR)
+  noHp        String?
+  alamat      String?
+  isAktif     Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  absensiKerja    AbsensiKerja[]
+  laporanHarian   LaporanHarian[]
+  jadwalMentor    Jadwal[]           @relation("MentorJadwal")
+  catatanBulanan  CatatanMentorBulanan[]
+
+  @@index([role])
+  @@index([isAktif])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Siswa {
+  id             String        @id @default(cuid())
+  namaLengkap    String
+  namaOrtu       String
+  noHpOrtu       String
+  emailOrtu      String?
+  jenjang        JenjangSiswa
+  kelas          String
+  sekolahAsal    String?
+  alamatRumah    String
+  latitude       Float?
+  longitude      Float?
+  programBelajar String
+  status         StatusSiswa   @default(AKTIF)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  jadwal         Jadwal[]
+  absensiSiswa   AbsensiSiswa[]
+  laporanHarian  LaporanHarian[]
+  pembayaran     Pembayaran[]
+
+  @@index([jenjang])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("siswa")
+}
+
+model Jadwal {
+  id             String    @id @default(cuid())
+  siswaId        String
+  mentorId       String
+  hariMengajar   String[]
+  jamMulai       String
+  jamSelesai     String
+  mataPelajaran  String[]
+  tanggalMulai   DateTime
+  tanggalSelesai DateTime?
+  isAktif        Boolean   @default(true)
+  catatan        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  siswa          Siswa           @relation(fields: [siswaId], references: [id])
+  mentor         User            @relation("MentorJadwal", fields: [mentorId], references: [id])
+  absensiSiswa   AbsensiSiswa[]
+
+  @@index([siswaId])
+  @@index([mentorId])
+  @@index([isAktif])
+  @@index([tanggalMulai])
+  @@map("jadwal")
+}
+
+model AbsensiSiswa {
+  id        String             @id @default(cuid())
+  jadwalId  String
+  siswaId   String
+  tanggal   DateTime           @db.Date
+  status    StatusAbsensiSiswa
+  catatan   String?
+  createdAt DateTime           @default(now())
+
+  jadwal    Jadwal             @relation(fields: [jadwalId], references: [id])
+  siswa     Siswa              @relation(fields: [siswaId], references: [id])
+
+  @@unique([jadwalId, siswaId, tanggal])
+  @@index([siswaId])
+  @@index([jadwalId])
+  @@index([tanggal])
+  @@map("absensi_siswa")
+}
+
+model AbsensiKerja {
+  id              String    @id @default(cuid())
+  userId          String
+  tanggal         DateTime  @db.Date
+  jamMasuk        DateTime
+  jamKeluar       DateTime?
+  durasiMenit     Int?
+  keteranganSiswa String?
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, tanggal])
+  @@index([userId])
+  @@index([tanggal])
+  @@map("absensi_kerja")
+}
+
+model LaporanHarian {
+  id               String   @id @default(cuid())
+  siswaId          String
+  mentorId         String
+  tanggal          DateTime @db.Date
+  materiDipelajari String
+  perkembangan     String
+  nilaiTO          Float?
+  pekerjaan        String?
+  catatanKhusus    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  siswa            Siswa    @relation(fields: [siswaId], references: [id])
+  mentor           User     @relation(fields: [mentorId], references: [id])
+
+  @@index([siswaId])
+  @@index([mentorId])
+  @@index([tanggal])
+  @@map("laporan_harian")
+}
+
+model CatatanMentorBulanan {
+  id            String   @id @default(cuid())
+  mentorId      String
+  bulan         Int
+  tahun         Int
+  catatanMateri String
+  refleksi      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  mentor        User     @relation(fields: [mentorId], references: [id])
+
+  @@unique([mentorId, bulan, tahun])
+  @@index([mentorId])
+  @@map("catatan_mentor_bulanan")
+}
+
+model Pembayaran {
+  id             String           @id @default(cuid())
+  siswaId        String
+  bulan          Int
+  tahun          Int
+  jumlah         Decimal          @db.Decimal(12, 2)
+  buktiBayarUrl  String?
+  status         StatusPembayaran @default(MENUNGGU_VERIFIKASI)
+  catatanAdmin   String?
+  verifikasiAt   DateTime?
+  verifikasiOleh String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  siswa          Siswa            @relation(fields: [siswaId], references: [id])
+
+  @@unique([siswaId, bulan, tahun])
+  @@index([siswaId])
+  @@index([status])
+  @@index([bulan, tahun])
+  @@map("pembayaran")
+}
+
+model Inquiry {
+  id              String   @id @default(cuid())
+  namaOrtu        String
+  noHp            String
+  namaAnak        String
+  jenjang         String
+  programMinat    String
+  pesan           String?
+  sudahDihubungi  Boolean  @default(false)
+  dihubungiAt     DateTime?
+  dihubungiOleh   String?
+  createdAt       DateTime @default(now())
+
+  @@index([sudahDihubungi])
+  @@index([createdAt])
+  @@map("inquiries")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entity     String
+  entityId   String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

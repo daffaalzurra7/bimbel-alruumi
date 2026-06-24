@@ -1,0 +1,230 @@
+"use client";
+
+import { MessageCircle, BookOpen, Calculator, Atom, Languages, GraduationCap } from "lucide-react";
+
+const programs = [
+  {
+    title: "Program Sukses SD",
+    subtitle: "Kelas 1–6 SD",
+    description:
+      "Fondasi belajar yang kuat sejak dini. Fokus pada pemahaman konsep dasar Matematika, Bahasa Indonesia, IPA, dan pembentukan kebiasaan belajar yang baik.",
+    icon: BookOpen,
+    subjects: ["Matematika", "B. Indonesia", "IPA", "B. Inggris"],
+    color: "#0d9255",
+    colorLight: "#ecfdf5",
+    waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program Sukses SD di Bimbel Al Ruumi.",
+  },
+  {
+    title: "Program Sukses SMP",
+    subtitle: "Kelas 7–9 SMP",
+    description:
+      "Persiapan matang untuk menghadapi ujian dan melanjutkan ke SMA favorit. Pendalaman materi dan latihan soal intensif dengan pendampingan personal.",
+    icon: Calculator,
+    subjects: ["Matematika", "IPA", "B. Indonesia", "B. Inggris"],
+    color: "#087542",
+    colorLight: "#d1fae5",
+    waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program Sukses SMP di Bimbel Al Ruumi.",
+  },
+  {
+    title: "Program Sukses SMA",
+    subtitle: "Kelas 10–12 SMA",
+    description:
+      "Program intensif persiapan UTBK/SNBT dan ujian masuk PTN. Strategi belajar efektif, try out berkala, dan bimbingan pemilihan jurusan kuliah.",
+    icon: Atom,
+    subjects: ["Matematika", "Fisika", "Kimia", "Biologi", "B. Inggris"],
+    color: "#065f36",
+    colorLight: "#a7f3d0",
+    waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program Sukses SMA di Bimbel Al Ruumi.",
+  },
+  {
+    title: "Program TKA Islami",
+    subtitle: "Tahsin & Tahfidz",
+    description:
+      "Program khusus bimbingan baca Al-Quran, tahsin, dan tahfidz. Dilengkapi dengan pembelajaran adab dan akhlak Islami sehari-hari.",
+    icon: Languages,
+    subjects: ["Tahsin", "Tahfidz", "Fiqih Dasar", "Adab Islami"],
+    color: "#d4930c",
+    colorLight: "#fffbeb",
+    waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program TKA Islami di Bimbel Al Ruumi.",
+  },
+];
+
+export default function ProgramSection() {
+  const waNumber = process.env.NEXT_PUBLIC_WA_NUMBER || "6281234567890";
+
+  return (
+    <section
+      id="program"
+      className="section"
+      style={{ background: "var(--bg-secondary)" }}
+    >
+      <div className="container-custom">
+        {/* Section Header */}
+        <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+          <div className="section-badge">
+            <GraduationCap size={14} />
+            Program Belajar
+          </div>
+          <h2 className="section-title">
+            Program{" "}
+            <span className="gold-underline" style={{ color: "var(--color-primary-600)" }}>
+              Unggulan
+            </span>{" "}
+            Kami
+          </h2>
+          <p className="section-subtitle">
+            Pilih program yang sesuai dengan kebutuhan dan jenjang pendidikan putra-putri Anda
+          </p>
+        </div>
+
+        {/* Program Cards */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: "1.5rem",
+          }}
+        >
+          {programs.map((program, index) => (
+            <div
+              key={index}
+              className="card"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                border: "none",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* Top accent line */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "4px",
+                  background: `linear-gradient(90deg, ${program.color}, ${program.color}88)`,
+                }}
+              />
+
+              {/* Icon */}
+              <div
+                style={{
+                  width: "52px",
+                  height: "52px",
+                  borderRadius: "14px",
+                  background: program.colorLight,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "1.25rem",
+                }}
+              >
+                <program.icon size={24} style={{ color: program.color }} />
+              </div>
+
+              {/* Title */}
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  marginBottom: "0.25rem",
+                  fontFamily: "var(--font-outfit), sans-serif",
+                }}
+              >
+                {program.title}
+              </h3>
+              <span
+                style={{
+                  fontSize: "0.8125rem",
+                  color: program.color,
+                  fontWeight: 600,
+                  marginBottom: "0.75rem",
+                }}
+              >
+                {program.subtitle}
+              </span>
+
+              {/* Description */}
+              <p
+                style={{
+                  fontSize: "0.875rem",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.7,
+                  marginBottom: "1.25rem",
+                  flex: 1,
+                }}
+              >
+                {program.description}
+              </p>
+
+              {/* Subjects */}
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "0.375rem",
+                  marginBottom: "1.5rem",
+                }}
+              >
+                {program.subjects.map((subject, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      fontSize: "0.75rem",
+                      padding: "0.25rem 0.625rem",
+                      borderRadius: "6px",
+                      background: program.colorLight,
+                      color: program.color,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {subject}
+                  </span>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <a
+                href={`https://wa.me/${waNumber}?text=${encodeURIComponent(
+                  program.waMessage
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem",
+                  borderRadius: "12px",
+                  background: `linear-gradient(135deg, ${program.color}, ${program.color}dd)`,
+                  color: "white",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  transition: "all 0.3s ease",
+                  boxShadow: `0 4px 14px ${program.color}35`,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = `0 6px 20px ${program.color}50`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = `0 4px 14px ${program.color}35`;
+                }}
+              >
+                <MessageCircle size={16} />
+                Daftar Program Ini
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
