@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Menu,
   X,
-  BookOpen,
   GraduationCap,
 } from "lucide-react";
 
@@ -76,17 +76,21 @@ export default function Navbar() {
         >
           <div
             style={{
+              position: "relative",
               width: "42px",
               height: "42px",
               borderRadius: "12px",
-              background: "linear-gradient(135deg, #f9bc24, #d4930c)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 14px rgba(212, 147, 12, 0.35)",
+              overflow: "hidden",
+              boxShadow: "0 4px 14px rgba(212, 147, 12, 0.2)",
             }}
           >
-            <BookOpen size={22} color="#3a1f06" strokeWidth={2.5} />
+            <Image
+              src="/Logo.png"
+              alt="Logo Al Ruumi"
+              fill
+              style={{ objectFit: "contain" }}
+              priority
+            />
           </div>
           <div>
             <span

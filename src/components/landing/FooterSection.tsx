@@ -1,11 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import {
   MapPin,
   Phone,
   Mail,
   Clock,
-  BookOpen,
   Globe,
   Video,
 } from "lucide-react";
@@ -59,16 +59,19 @@ export default function FooterSection() {
             >
               <div
                 style={{
+                  position: "relative",
                   width: "42px",
                   height: "42px",
                   borderRadius: "12px",
-                  background: "linear-gradient(135deg, #f9bc24, #d4930c)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  overflow: "hidden",
                 }}
               >
-                <BookOpen size={22} color="#3a1f06" strokeWidth={2.5} />
+                <Image
+                  src="/Logo.png"
+                  alt="Logo Al Ruumi"
+                  fill
+                  style={{ objectFit: "contain" }}
+                />
               </div>
               <div>
                 <span
