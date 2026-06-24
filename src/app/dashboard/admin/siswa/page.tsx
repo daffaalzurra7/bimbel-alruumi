@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GraduationCap, Plus, X, Loader2, Trash2, Pencil, Check } from "lucide-react";
+import { GraduationCap, Plus, X, Loader2, Trash2, Pencil, Check, Save } from "lucide-react";
 
 interface Siswa {
   id: string;
   namaLengkap: string;
   namaOrtu: string;
   noHpOrtu: string;
+  emailOrtu: string | null;
   jenjang: string;
   kelas: string;
   sekolahAsal: string | null;
@@ -16,6 +17,8 @@ interface Siswa {
   status: string;
 }
 
+const emptyForm = { namaLengkap: "", namaOrtu: "", noHpOrtu: "", emailOrtu: "", jenjang: "SD", kelas: "", sekolahAsal: "", alamatRumah: "", programBelajar: "" };
+
 export default function KelolaSiswaPage() {
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +26,12 @@ export default function KelolaSiswaPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editStatusId, setEditStatusId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState("");
 
-  const [form, setForm] = useState({ namaLengkap: "", namaOrtu: "", noHpOrtu: "", emailOrtu: "", jenjang: "SD", kelas: "", sekolahAsal: "", alamatRumah: "", programBelajar: "" });
+  const [form, setForm] = useState(emptyForm);
+  const [editMode, setEditMode] = useState<"create" | "edit">("create");
+  const [editSiswaId, setEditSiswaId] = useState<string | null>(null);
 
   const fetchSiswa = async () => {
     try {
@@ -37,14 +43,42 @@ export default function KelolaSiswaPage() {
 
   useEffect(() => { fetchSiswa(); }, []);
 
+  const openCreate = () => {
+    setEditMode("create");
+    setEditSiswaId(null);
+    setForm(emptyForm);
+    setShowForm(true);
+    setError("");
+  };
+
+  const openEdit = (s: Siswa) => {
+    setEditMode("edit");
+    setEditSiswaId(s.id);
+    setForm({
+      namaLengkap: s.namaLengkap,
+      namaOrtu: s.namaOrtu,
+      noHpOrtu: s.noHpOrtu,
+      emailOrtu: s.emailOrtu || "",
+      jenjang: s.jenjang,
+      kelas: s.kelas,
+      sekolahAsal: s.sekolahAsal || "",
+      alamatRumah: s.alamatRumah,
+      programBelajar: s.programBelajar,
+    });
+    setShowForm(true);
+    setError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true); setError("");
     try {
-      const res = await fetch("/api/siswa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const url = editMode === "edit" ? `/api/siswa/${editSiswaId}` : "/api/siswa";
+      const method = editMode === "edit" ? "PATCH" : "POST";
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       if (!res.ok) { const d = await res.json(); setError(d.error?.message || "Gagal"); return; }
       setShowForm(false);
-      setForm({ namaLengkap: "", namaOrtu: "", noHpOrtu: "", emailOrtu: "", jenjang: "SD", kelas: "", sekolahAsal: "", alamatRumah: "", programBelajar: "" });
+      setForm(emptyForm);
       fetchSiswa();
     } catch { setError("Kesalahan jaringan"); }
     finally { setFormLoading(false); }
@@ -53,7 +87,7 @@ export default function KelolaSiswaPage() {
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
       await fetch(`/api/siswa/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-      setEditingId(null);
+      setEditStatusId(null);
       fetchSiswa();
     } catch (err) { console.error(err); }
   };
@@ -78,16 +112,19 @@ export default function KelolaSiswaPage() {
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, fontFamily: "var(--font-outfit), sans-serif", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <GraduationCap size={24} style={{ color: "var(--color-primary-500)" }} /> Kelola Siswa
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>Tambah dan kelola data siswa bimbingan.</p>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>Tambah, edit, dan kelola data siswa bimbingan.</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.75rem 1.25rem", fontWeight: 600, color: "white", background: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", boxShadow: "0 4px 14px rgba(13,146,85,0.35)" }}>
+        <button onClick={showForm ? () => setShowForm(false) : openCreate} style={{ padding: "0.75rem 1.25rem", fontWeight: 600, color: "white", background: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", boxShadow: "0 4px 14px rgba(13,146,85,0.35)" }}>
           {showForm ? <X size={16} /> : <Plus size={16} />} {showForm ? "Tutup" : "Tambah Siswa"}
         </button>
       </div>
 
+      {/* Form — Create & Edit */}
       {showForm && (
         <div style={{ background: "white", borderRadius: "20px", padding: "1.5rem", border: "1px solid var(--color-neutral-100)", boxShadow: "var(--shadow-sm)", marginBottom: "2rem" }}>
-          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1.25rem" }}>Tambah Siswa Baru</h3>
+          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1.25rem" }}>
+            {editMode === "edit" ? `✏️ Edit Data: ${form.namaLengkap}` : "Tambah Siswa Baru"}
+          </h3>
           <form onSubmit={handleSubmit}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
               <div><label style={labelStyle}>Nama Lengkap *</label><input value={form.namaLengkap} onChange={(e) => updateForm("namaLengkap", e.target.value)} required style={inputStyle} /></div>
@@ -107,13 +144,14 @@ export default function KelolaSiswaPage() {
             </div>
             {error && <div style={{ padding: "0.75rem 1rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "12px", color: "#dc2626", fontSize: "0.875rem", marginBottom: "1rem" }}>{error}</div>}
             <button type="submit" disabled={formLoading} style={{ padding: "0.75rem 1.5rem", fontWeight: 700, color: "white", background: formLoading ? "var(--color-neutral-400)" : "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: formLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              {formLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} {formLoading ? "Menyimpan..." : "Simpan"}
+              {formLoading ? <Loader2 size={16} className="animate-spin" /> : editMode === "edit" ? <Save size={16} /> : <Plus size={16} />}
+              {formLoading ? "Menyimpan..." : editMode === "edit" ? "Update Data" : "Simpan"}
             </button>
           </form>
         </div>
       )}
 
-      {/* Cards view for mobile, table for desktop */}
+      {/* Table */}
       <div style={{ background: "white", borderRadius: "20px", border: "1px solid var(--color-neutral-100)", boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
         {loading ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Memuat...</div>
@@ -121,7 +159,7 @@ export default function KelolaSiswaPage() {
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Belum ada data siswa.</div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: "700px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: "750px" }}>
               <thead>
                 <tr style={{ background: "var(--bg-secondary)" }}>
                   {["Nama", "Jenjang", "Sekolah", "Ortu / HP", "Program", "Status", "Aksi"].map((h) => (
@@ -141,7 +179,7 @@ export default function KelolaSiswaPage() {
                     </td>
                     <td style={{ padding: "0.75rem 0.875rem" }}>{s.programBelajar}</td>
                     <td style={{ padding: "0.75rem 0.875rem" }}>
-                      {editingId === s.id ? (
+                      {editStatusId === s.id ? (
                         <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
                           <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} style={{ padding: "0.25rem 0.5rem", borderRadius: "6px", fontSize: "0.75rem", border: "1px solid var(--color-neutral-200)", background: "white" }}>
                             <option value="AKTIF">AKTIF</option>
@@ -149,18 +187,22 @@ export default function KelolaSiswaPage() {
                             <option value="CALON_SISWA">CALON SISWA</option>
                           </select>
                           <button onClick={() => handleUpdateStatus(s.id, editStatus)} style={{ background: "var(--color-primary-500)", border: "none", borderRadius: "6px", cursor: "pointer", color: "white", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={12} /></button>
-                          <button onClick={() => setEditingId(null)} style={{ background: "var(--color-neutral-200)", border: "none", borderRadius: "6px", cursor: "pointer", color: "var(--text-secondary)", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={12} /></button>
+                          <button onClick={() => setEditStatusId(null)} style={{ background: "var(--color-neutral-200)", border: "none", borderRadius: "6px", cursor: "pointer", color: "var(--text-secondary)", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={12} /></button>
                         </div>
                       ) : (
-                        <span style={{ padding: "0.2rem 0.5rem", borderRadius: "6px", fontSize: "0.6875rem", fontWeight: 600, background: statusColor[s.status]?.bg, color: statusColor[s.status]?.text, cursor: "pointer" }} onClick={() => { setEditingId(s.id); setEditStatus(s.status); }}>
+                        <span
+                          style={{ padding: "0.2rem 0.5rem", borderRadius: "6px", fontSize: "0.6875rem", fontWeight: 600, background: statusColor[s.status]?.bg, color: statusColor[s.status]?.text, cursor: "pointer" }}
+                          onClick={() => { setEditStatusId(s.id); setEditStatus(s.status); }}
+                          title="Klik untuk ubah status"
+                        >
                           {s.status.replace(/_/g, " ")}
                         </span>
                       )}
                     </td>
                     <td style={{ padding: "0.75rem 0.875rem" }}>
                       <div style={{ display: "flex", gap: "0.375rem" }}>
-                        <button onClick={() => { setEditingId(s.id); setEditStatus(s.status); }} title="Edit Status" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-primary-500)", padding: "0.25rem" }}><Pencil size={14} /></button>
-                        <button onClick={() => handleDelete(s.id)} title="Nonaktifkan" style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: "0.25rem" }}><Trash2 size={14} /></button>
+                        <button onClick={() => openEdit(s)} title="Edit Data" style={{ background: "var(--color-primary-50)", border: "1px solid var(--color-primary-200)", borderRadius: "8px", cursor: "pointer", color: "var(--color-primary-600)", padding: "0.375rem", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={14} /></button>
+                        <button onClick={() => handleDelete(s.id)} title="Nonaktifkan" style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", cursor: "pointer", color: "#dc2626", padding: "0.375rem", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
