@@ -32,12 +32,13 @@ export async function GET(
     const presensi = await prisma.absensiKerja.findMany({
       where: { userId: id, tanggal: { gte: startDate, lte: endDate } },
       orderBy: [{ tanggal: "desc" }, { jamMasuk: "desc" }],
+      include: { siswa: { select: { id: true, namaLengkap: true, jenjang: true, kelas: true } } },
     });
 
     // Get jadwal with fee info
     const jadwal = await prisma.jadwal.findMany({
       where: { mentorId: id, isAktif: true },
-      include: { siswa: { select: { namaLengkap: true, jenjang: true, kelas: true } } },
+      include: { siswa: { select: { id: true, namaLengkap: true, jenjang: true, kelas: true } } },
     });
 
     // Get bonus for the month
@@ -45,22 +46,61 @@ export async function GET(
       where: { mentorId: id, bulan, tahun },
     });
 
-    // Calculate honor
+    // Calculate honor — use per-student fee from jadwal
     const totalSesi = presensi.length;
     const totalMenit = presensi.reduce((sum, p) => sum + p.durasiMenit, 0);
 
-    // Calculate fee-based honor: for each presensi, find matching jadwal fee
+    // Build jadwal fee lookup by siswaId
+    const feeMap = new Map<string, { fee: number; transport: number }>();
+    for (const j of jadwal) {
+      feeMap.set(j.siswaId, { fee: Number(j.feeMengajar), transport: Number(j.transportFee) });
+    }
+
+    // Calculate fee per presensi using matched student fee
     let totalFee = 0;
     let totalTransport = 0;
+    const sesiCountMap = new Map<string, { nama: string; jenjang: string; kelas: string; count: number; fee: number; transport: number }>();
+
     for (const p of presensi) {
-      // Average fee across all jadwal for this mentor
-      if (jadwal.length > 0) {
+      const sid = p.siswaId;
+      if (sid && feeMap.has(sid)) {
+        const { fee, transport } = feeMap.get(sid)!;
+        totalFee += fee;
+        totalTransport += transport;
+      } else if (jadwal.length > 0) {
+        // Fallback: average fee
         const avgFee = jadwal.reduce((s, j) => s + Number(j.feeMengajar), 0) / jadwal.length;
         const avgTransport = jadwal.reduce((s, j) => s + Number(j.transportFee), 0) / jadwal.length;
         totalFee += avgFee;
         totalTransport += avgTransport;
       }
+
+      // Count sesi per siswa
+      if (sid && p.siswa) {
+        const existing = sesiCountMap.get(sid);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          const fees = feeMap.get(sid);
+          sesiCountMap.set(sid, {
+            nama: p.siswa.namaLengkap,
+            jenjang: p.siswa.jenjang,
+            kelas: p.siswa.kelas,
+            count: 1,
+            fee: fees?.fee || 0,
+            transport: fees?.transport || 0,
+          });
+        }
+      }
     }
+
+    const sesiPerSiswa = Array.from(sesiCountMap.entries()).map(([siswaId, data]) => ({
+      siswaId,
+      ...data,
+      totalFee: data.count * data.fee,
+      totalTransport: data.count * data.transport,
+    }));
+
     const totalBonus = bonus.reduce((sum, b) => sum + Number(b.jumlah), 0);
     const totalHonor = totalFee + totalTransport + totalBonus;
 
@@ -76,6 +116,7 @@ export async function GET(
         presensi,
         jadwal,
         bonus,
+        sesiPerSiswa,
         stats: {
           totalSesi,
           totalMenit,

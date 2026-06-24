@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         ...(!isAdmin ? { mentorId: session.user.id } : {}),
       },
       include: {
-        siswa: { select: { namaLengkap: true, jenjang: true, kelas: true } },
+        siswa: { select: { id: true, namaLengkap: true, jenjang: true, kelas: true } },
         mentor: { select: { nama: true } },
       },
       orderBy: { createdAt: "desc" },

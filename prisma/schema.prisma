@@ -94,6 +94,7 @@ model Siswa {
   absensiSiswa   AbsensiSiswa[]
   laporanHarian  LaporanHarian[]
   pembayaran     Pembayaran[]
+  presensiKerja  AbsensiKerja[]  @relation("PresensiSiswa")
 
   @@index([jenjang])
   @@index([status])
@@ -154,6 +155,7 @@ model AbsensiSiswa {
 model AbsensiKerja {
   id              String    @id @default(cuid())
   userId          String
+  siswaId         String?   // Siswa yang diampu saat sesi ini
   tanggal         DateTime  @db.Date
   jamMasuk        String    // Format "HH:mm", e.g. "08:00", "14:30"
   durasiMenit     Int       // 60, 90, atau 120
@@ -161,9 +163,11 @@ model AbsensiKerja {
   createdAt       DateTime  @default(now())
 
   user            User      @relation(fields: [userId], references: [id])
+  siswa           Siswa?    @relation("PresensiSiswa", fields: [siswaId], references: [id])
 
   // Tidak ada @@unique — mentor boleh presensi >1x per hari
   @@index([userId])
+  @@index([siswaId])
   @@index([tanggal])
   @@map("absensi_kerja")
 }

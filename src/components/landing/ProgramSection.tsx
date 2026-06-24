@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, BookOpen, Calculator, Atom, Languages, GraduationCap } from "lucide-react";
+import { MessageCircle, BookOpen, Calculator, Atom, Languages, GraduationCap, PenTool, Target, Trophy } from "lucide-react";
 
 const programs = [
   {
@@ -15,6 +15,17 @@ const programs = [
     waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program Sukses SD di Bimbel Al Ruumi.",
   },
   {
+    title: "TKA SD",
+    subtitle: "Tes Kemampuan Akademik SD",
+    description:
+      "Persiapan khusus tes masuk SD unggulan dan sekolah favorit. Latihan soal TKA, logika dasar, dan kemampuan verbal-numerik untuk anak usia dini.",
+    icon: PenTool,
+    subjects: ["Logika Dasar", "Numerik", "Verbal", "Penalaran"],
+    color: "#059669",
+    colorLight: "#d1fae5",
+    waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program TKA SD di Bimbel Al Ruumi.",
+  },
+  {
     title: "Program Sukses SMP",
     subtitle: "Kelas 7–9 SMP",
     description:
@@ -26,15 +37,37 @@ const programs = [
     waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program Sukses SMP di Bimbel Al Ruumi.",
   },
   {
+    title: "TKA SMP",
+    subtitle: "Tes Kemampuan Akademik SMP",
+    description:
+      "Bimbingan intensif persiapan tes masuk SMP unggulan/negeri. Penguatan kemampuan penalaran, matematika, dan verbal sesuai standar seleksi.",
+    icon: Target,
+    subjects: ["Penalaran Umum", "Matematika", "B. Indonesia", "IPA"],
+    color: "#0369a1",
+    colorLight: "#e0f2fe",
+    waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program TKA SMP di Bimbel Al Ruumi.",
+  },
+  {
     title: "Program Sukses SMA",
     subtitle: "Kelas 10–12 SMA",
     description:
-      "Program intensif persiapan UTBK/SNBT dan ujian masuk PTN. Strategi belajar efektif, try out berkala, dan bimbingan pemilihan jurusan kuliah.",
+      "Program intensif untuk penguasaan materi SMA. Strategi belajar efektif dan pendampingan akademik menyeluruh untuk meraih prestasi optimal.",
     icon: Atom,
     subjects: ["Matematika", "Fisika", "Kimia", "Biologi", "B. Inggris"],
     color: "#065f36",
     colorLight: "#a7f3d0",
     waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program Sukses SMA di Bimbel Al Ruumi.",
+  },
+  {
+    title: "UTBK SMA",
+    subtitle: "Persiapan UTBK / SNBT",
+    description:
+      "Program unggulan persiapan UTBK-SNBT masuk PTN impian. Try out berkala, pembahasan soal HOTS, strategi pengerjaan, dan bimbingan pemilihan jurusan.",
+    icon: Trophy,
+    subjects: ["Penalaran Umum", "Penalaran Matematika", "Literasi B. Indonesia", "Literasi B. Inggris"],
+    color: "#7c3aed",
+    colorLight: "#ede9fe",
+    waMessage: "Assalamualaikum, saya ingin mendaftarkan anak saya untuk Program UTBK SMA di Bimbel Al Ruumi.",
   },
   {
     title: "Program TKA Islami",

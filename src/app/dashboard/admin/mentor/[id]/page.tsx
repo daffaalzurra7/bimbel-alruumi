@@ -25,6 +25,19 @@ interface Presensi {
   jamMasuk: string;
   durasiMenit: number;
   catatan: string | null;
+  siswa: { namaLengkap: string } | null;
+}
+
+interface SesiPerSiswa {
+  siswaId: string;
+  nama: string;
+  jenjang: string;
+  kelas: string;
+  count: number;
+  fee: number;
+  transport: number;
+  totalFee: number;
+  totalTransport: number;
 }
 
 interface JadwalItem {
@@ -60,6 +73,7 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
   const [presensi, setPresensi] = useState<Presensi[]>([]);
   const [jadwal, setJadwal] = useState<JadwalItem[]>([]);
   const [bonus, setBonus] = useState<Bonus[]>([]);
+  const [sesiPerSiswa, setSesiPerSiswa] = useState<SesiPerSiswa[]>([]);
   const [feeEdits, setFeeEdits] = useState<Record<string, { fee: string; transport: string }>>({});
   const [savingFee, setSavingFee] = useState<string | null>(null);
   const [showBonusForm, setShowBonusForm] = useState(false);
@@ -78,6 +92,7 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
         setPresensi(d.data.presensi);
         setJadwal(d.data.jadwal);
         setBonus(d.data.bonus);
+        setSesiPerSiswa(d.data.sesiPerSiswa || []);
         // Init fee edits
         const edits: Record<string, { fee: string; transport: string }> = {};
         for (const j of d.data.jadwal) {
@@ -209,6 +224,38 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
+      {/* Sesi per Siswa — Rekap */}
+      {sesiPerSiswa.length > 0 && (
+        <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
+          <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "1rem" }}>📊 Rekap Sesi per Siswa — {BULAN[bulan - 1]}</h3>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: "500px" }}>
+              <thead>
+                <tr style={{ background: "var(--bg-secondary)" }}>
+                  {["Siswa", "Jenjang", "Sesi", "Fee/Sesi", "Transport/Sesi", "Total Fee", "Total Transport", "Subtotal"].map((h) => (
+                    <th key={h} style={{ padding: "0.625rem 0.75rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sesiPerSiswa.map((s) => (
+                  <tr key={s.siswaId} style={{ borderBottom: "1px solid var(--color-neutral-100)" }}>
+                    <td style={{ padding: "0.625rem 0.75rem", fontWeight: 600 }}>{s.nama}</td>
+                    <td style={{ padding: "0.625rem 0.75rem" }}><span style={{ padding: "0.125rem 0.5rem", background: "#ede9fe", color: "#6d28d9", borderRadius: "6px", fontSize: "0.6875rem", fontWeight: 600 }}>{s.jenjang}-{s.kelas}</span></td>
+                    <td style={{ padding: "0.625rem 0.75rem" }}><span style={{ padding: "0.125rem 0.5rem", background: "var(--color-primary-50)", color: "var(--color-primary-700)", borderRadius: "6px", fontWeight: 700 }}>{s.count}x</span></td>
+                    <td style={{ padding: "0.625rem 0.75rem" }}>{formatRp(s.fee)}</td>
+                    <td style={{ padding: "0.625rem 0.75rem" }}>{formatRp(s.transport)}</td>
+                    <td style={{ padding: "0.625rem 0.75rem", fontWeight: 600 }}>{formatRp(s.totalFee)}</td>
+                    <td style={{ padding: "0.625rem 0.75rem", fontWeight: 600 }}>{formatRp(s.totalTransport)}</td>
+                    <td style={{ padding: "0.625rem 0.75rem", fontWeight: 700, color: "var(--color-primary-700)" }}>{formatRp(s.totalFee + s.totalTransport)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Fee Settings per Siswa */}
       <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
         <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "1rem" }}>⚙️ Fee per Siswa</h3>
@@ -226,27 +273,13 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
                 <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                   <div>
                     <label style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", display: "block" }}>Fee/sesi</label>
-                    <input
-                      type="number"
-                      value={feeEdits[j.id]?.fee || "0"}
-                      onChange={(e) => setFeeEdits((p) => ({ ...p, [j.id]: { ...p[j.id], fee: e.target.value } }))}
-                      style={{ ...inputStyle, width: "100px" }}
-                    />
+                    <input type="number" value={feeEdits[j.id]?.fee || "0"} onChange={(e) => setFeeEdits((p) => ({ ...p, [j.id]: { ...p[j.id], fee: e.target.value } }))} style={{ ...inputStyle, width: "100px" }} />
                   </div>
                   <div>
                     <label style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", display: "block" }}>Transport</label>
-                    <input
-                      type="number"
-                      value={feeEdits[j.id]?.transport || "0"}
-                      onChange={(e) => setFeeEdits((p) => ({ ...p, [j.id]: { ...p[j.id], transport: e.target.value } }))}
-                      style={{ ...inputStyle, width: "100px" }}
-                    />
+                    <input type="number" value={feeEdits[j.id]?.transport || "0"} onChange={(e) => setFeeEdits((p) => ({ ...p, [j.id]: { ...p[j.id], transport: e.target.value } }))} style={{ ...inputStyle, width: "100px" }} />
                   </div>
-                  <button
-                    onClick={() => handleSaveFee(j.id)}
-                    disabled={savingFee === j.id}
-                    style={{ marginTop: "auto", padding: "0.5rem", background: "var(--color-primary-500)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center" }}
-                  >
+                  <button onClick={() => handleSaveFee(j.id)} disabled={savingFee === j.id} style={{ marginTop: "auto", padding: "0.5rem", background: "var(--color-primary-500)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center" }}>
                     {savingFee === j.id ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   </button>
                 </div>
@@ -312,7 +345,7 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: "500px" }}>
               <thead>
                 <tr style={{ background: "var(--bg-secondary)" }}>
-                  {["Tanggal", "Hari", "Jam", "Durasi", "Catatan"].map((h) => (
+                  {["Tanggal", "Hari", "Siswa", "Jam", "Durasi", "Catatan"].map((h) => (
                     <th key={h} style={{ padding: "0.625rem 0.875rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
                   ))}
                 </tr>
@@ -324,6 +357,7 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
                     <tr key={p.id} style={{ borderBottom: "1px solid var(--color-neutral-100)" }}>
                       <td style={{ padding: "0.625rem 0.875rem", fontWeight: 500 }}>{d.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</td>
                       <td style={{ padding: "0.625rem 0.875rem", color: "var(--text-secondary)" }}>{d.toLocaleDateString("id-ID", { weekday: "long" })}</td>
+                      <td style={{ padding: "0.625rem 0.875rem" }}>{p.siswa ? <span style={{ padding: "0.125rem 0.5rem", background: "#ede9fe", color: "#6d28d9", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 600 }}>{p.siswa.namaLengkap}</span> : <span style={{ color: "var(--text-secondary)" }}>—</span>}</td>
                       <td style={{ padding: "0.625rem 0.875rem" }}><span style={{ padding: "0.15rem 0.5rem", background: "var(--color-primary-50)", color: "var(--color-primary-700)", borderRadius: "6px", fontWeight: 600 }}>{p.jamMasuk}</span></td>
                       <td style={{ padding: "0.625rem 0.875rem" }}><span style={{ padding: "0.15rem 0.5rem", background: "var(--color-gold-50)", color: "var(--color-gold-700)", borderRadius: "6px", fontWeight: 600 }}>{p.durasiMenit} mnt</span></td>
                       <td style={{ padding: "0.625rem 0.875rem", color: "var(--text-secondary)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.catatan || "—"}</td>
