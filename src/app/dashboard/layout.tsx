@@ -1,0 +1,98 @@
+"use client";
+
+import { useState } from "react";
+import { SessionProvider, useSession } from "next-auth/react";
+import Sidebar from "@/components/dashboard/Sidebar";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  if (!session?.user) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--bg-secondary)",
+        }}
+      >
+        <div style={{ textAlign: "center", color: "var(--text-secondary)" }}>
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid var(--color-neutral-200)",
+              borderTopColor: "var(--color-primary-500)",
+              borderRadius: "50%",
+              margin: "0 auto 1rem",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          Memuat...
+        </div>
+        <style jsx>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  const role = (session.user as { role: string }).role || "MENTOR";
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg-secondary)" }}>
+      <Sidebar
+        role={role}
+        isCollapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+
+      <div
+        style={{
+          flex: 1,
+          marginLeft: sidebarCollapsed ? "72px" : "260px",
+          transition: "margin-left 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+        }}
+      >
+        <DashboardHeader
+          userName={session.user.name || "User"}
+          userRole={role}
+          onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+
+        <main style={{ flex: 1, padding: "1.5rem" }}>
+          {children}
+        </main>
+      </div>
+
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          div[style*="margin-left"] {
+            margin-left: 0 !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <SessionProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </SessionProvider>
+  );
+}

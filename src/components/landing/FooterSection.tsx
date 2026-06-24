@@ -106,7 +106,7 @@ export default function FooterSection() {
               }}
             >
               Bimbel Al Ruumi hadir sebagai mitra terpercaya dalam membimbing
-              putra-putri Anda meraih prestasi akademik dengan landasan nilai
+              putra-putri Anda belajar dengan landasan nilai
               Islami.
             </p>
 

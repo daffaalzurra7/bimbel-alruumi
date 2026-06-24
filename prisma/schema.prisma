@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
 }
 
 // ============================================================
@@ -16,7 +16,6 @@ datasource db {
 enum Role {
   ADMIN
   MENTOR
-  STAFF
 }
 
 enum JenjangSiswa {
@@ -146,19 +145,21 @@ model AbsensiSiswa {
   @@map("absensi_siswa")
 }
 
+// Presensi Kerja Mentor
+// - Satu mentor bisa presensi BERKALI-KALI per hari (banyak siswa)
+// - Mencatat tanggal + jam masuk + durasi (60/90/120 menit)
 model AbsensiKerja {
   id              String    @id @default(cuid())
   userId          String
   tanggal         DateTime  @db.Date
-  jamMasuk        DateTime
-  jamKeluar       DateTime?
-  durasiMenit     Int?
-  keteranganSiswa String?
+  jamMasuk        String    // Format "HH:mm", e.g. "08:00", "14:30"
+  durasiMenit     Int       // 60, 90, atau 120
+  catatan         String?
   createdAt       DateTime  @default(now())
 
   user            User      @relation(fields: [userId], references: [id])
 
-  @@unique([userId, tanggal])
+  // Tidak ada @@unique — mentor boleh presensi >1x per hari
   @@index([userId])
   @@index([tanggal])
   @@map("absensi_kerja")
