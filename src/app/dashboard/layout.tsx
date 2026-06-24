@@ -1,15 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SessionProvider, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  if (!session?.user) {
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading" || status === "unauthenticated") {
     return (
       <div
         style={{
@@ -43,7 +52,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const role = (session.user as { role: string }).role || "MENTOR";
+  const role = (session?.user as { role?: string })?.role || "MENTOR";
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg-secondary)" }}>
@@ -64,7 +73,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }}
       >
         <DashboardHeader
-          userName={session.user.name || "User"}
+          userName={session?.user?.name || "User"}
           userRole={role}
           onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
