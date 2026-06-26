@@ -60,7 +60,8 @@ model User {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  absensiKerja    AbsensiKerja[]
+  absensiKerja    AbsensiKerja[]     @relation("PresensiUser")
+  presensiPengganti AbsensiKerja[]   @relation("MentorPengganti")
   laporanHarian   LaporanHarian[]
   jadwalMentor    Jadwal[]           @relation("MentorJadwal")
   catatanBulanan  CatatanMentorBulanan[]
@@ -151,23 +152,27 @@ model AbsensiSiswa {
 
 // Presensi Kerja Mentor
 // - Satu mentor bisa presensi BERKALI-KALI per hari (banyak siswa)
-// - Mencatat tanggal + jam masuk + durasi (60/90/120 menit)
+// - Jika mentor berhalangan, bisa assign mentor pengganti
+// - Honor masuk ke mentor yang BENAR-BENAR mengajar (pengganti jika ada)
 model AbsensiKerja {
-  id              String    @id @default(cuid())
-  userId          String
-  siswaId         String?   // Siswa yang diampu saat sesi ini
-  tanggal         DateTime  @db.Date
-  jamMasuk        String    // Format "HH:mm", e.g. "08:00", "14:30"
-  durasiMenit     Int       // 60, 90, atau 120
-  catatan         String?
-  createdAt       DateTime  @default(now())
+  id                String    @id @default(cuid())
+  userId            String    // Mentor utama yang membuat presensi
+  siswaId           String?   // Siswa yang diampu saat sesi ini
+  mentorPenggantiId String?   // Mentor pengganti jika mentor utama berhalangan
+  tanggal           DateTime  @db.Date
+  jamMasuk          String    // Format "HH:mm"
+  durasiMenit       Int       // 60, 90, atau 120
+  catatan           String?
+  createdAt         DateTime  @default(now())
 
-  user            User      @relation(fields: [userId], references: [id])
-  siswa           Siswa?    @relation("PresensiSiswa", fields: [siswaId], references: [id])
+  user              User      @relation("PresensiUser", fields: [userId], references: [id])
+  siswa             Siswa?    @relation("PresensiSiswa", fields: [siswaId], references: [id])
+  mentorPengganti   User?     @relation("MentorPengganti", fields: [mentorPenggantiId], references: [id])
 
   // Tidak ada @@unique — mentor boleh presensi >1x per hari
   @@index([userId])
   @@index([siswaId])
+  @@index([mentorPenggantiId])
   @@index([tanggal])
   @@map("absensi_kerja")
 }

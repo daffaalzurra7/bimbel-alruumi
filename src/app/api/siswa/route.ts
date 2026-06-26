@@ -45,17 +45,37 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: Array.from(siswaMap.values()) });
     }
 
-    // Admin: get all siswa
+    // Admin: get all siswa with mentor info
     const status = searchParams.get("status");
+    const jenjang = searchParams.get("jenjang");
+    const mentorId = searchParams.get("mentorId");
+
+    // Base filter
+    const where: Record<string, unknown> = { deletedAt: null };
+    if (status) where.status = status;
+    if (jenjang) where.jenjang = jenjang;
+    if (mentorId) {
+      where.jadwal = { some: { mentorId, isAktif: true } };
+    }
+
     const siswa = await prisma.siswa.findMany({
-      where: {
-        deletedAt: null,
-        ...(status ? { status: status as "AKTIF" | "NONAKTIF" | "CALON_SISWA" } : {}),
-      },
+      where,
       orderBy: { namaLengkap: "asc" },
+      include: {
+        jadwal: {
+          where: { isAktif: true },
+          select: { mentor: { select: { id: true, nama: true } } },
+        },
+      },
     });
 
-    return NextResponse.json({ success: true, data: siswa });
+    // Transform: add mentor names
+    const data = siswa.map((s) => {
+      const mentors = [...new Map(s.jadwal.map((j) => [j.mentor.id, j.mentor])).values()];
+      return { ...s, mentors, jadwal: undefined };
+    });
+
+    return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error("GET /api/siswa error:", error);
     return NextResponse.json(

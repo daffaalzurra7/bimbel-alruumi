@@ -28,11 +28,33 @@ export async function GET(
     });
     if (!mentor) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Mentor tidak ditemukan" } }, { status: 404 });
 
-    // Get presensi for the month
-    const presensi = await prisma.absensiKerja.findMany({
-      where: { userId: id, tanggal: { gte: startDate, lte: endDate } },
-      orderBy: [{ tanggal: "desc" }, { jamMasuk: "desc" }],
-      include: { siswa: { select: { id: true, namaLengkap: true, jenjang: true, kelas: true } } },
+    // Get presensi for the month:
+    // 1. Presensi created by this mentor (where NOT delegated to a substitute)
+    // 2. Presensi where this mentor WAS the substitute
+    const [ownPresensi, penggantiPresensi] = await Promise.all([
+      prisma.absensiKerja.findMany({
+        where: { userId: id, mentorPenggantiId: null, tanggal: { gte: startDate, lte: endDate } },
+        orderBy: [{ tanggal: "desc" }, { jamMasuk: "desc" }],
+        include: {
+          siswa: { select: { id: true, namaLengkap: true, jenjang: true, kelas: true } },
+          mentorPengganti: { select: { id: true, nama: true } },
+          user: { select: { id: true, nama: true } },
+        },
+      }),
+      prisma.absensiKerja.findMany({
+        where: { mentorPenggantiId: id, tanggal: { gte: startDate, lte: endDate } },
+        orderBy: [{ tanggal: "desc" }, { jamMasuk: "desc" }],
+        include: {
+          siswa: { select: { id: true, namaLengkap: true, jenjang: true, kelas: true } },
+          mentorPengganti: { select: { id: true, nama: true } },
+          user: { select: { id: true, nama: true } },
+        },
+      }),
+    ]);
+    // Merge: honor-eligible presensi = own (no substitute) + substitute assignments
+    const presensi = [...ownPresensi, ...penggantiPresensi].sort((a, b) => {
+      const dateCompare = new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime();
+      return dateCompare || b.jamMasuk.localeCompare(a.jamMasuk);
     });
 
     // Get jadwal with fee info

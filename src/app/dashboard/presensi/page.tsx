@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ClipboardCheck, Plus, X, Loader2 } from "lucide-react";
+import { ClipboardCheck, Plus, X, Loader2, UserCheck, ArrowRightLeft } from "lucide-react";
 
 interface SiswaOption { id: string; namaLengkap: string; jenjang: string; kelas: string; }
+interface MentorOption { id: string; nama: string; }
 interface Presensi {
   id: string;
   tanggal: string;
@@ -11,11 +12,13 @@ interface Presensi {
   durasiMenit: number;
   catatan: string | null;
   siswa: { namaLengkap: string; jenjang: string; kelas: string } | null;
+  mentorPengganti: { id: string; nama: string } | null;
 }
 
 export default function PresensiPage() {
   const [presensiList, setPresensiList] = useState<Presensi[]>([]);
   const [siswaOptions, setSiswaOptions] = useState<SiswaOption[]>([]);
+  const [mentorOptions, setMentorOptions] = useState<MentorOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
@@ -28,16 +31,17 @@ export default function PresensiPage() {
   const [durasiMenit, setDurasiMenit] = useState(90);
   const [siswaId, setSiswaId] = useState("");
   const [catatan, setCatatan] = useState("");
+  const [usePengganti, setUsePengganti] = useState(false);
+  const [mentorPenggantiId, setMentorPenggantiId] = useState("");
 
   const fetchData = async () => {
     try {
-      const [presRes, jadwalRes] = await Promise.all([
+      const [presRes, jRes, mRes] = await Promise.all([
         fetch("/api/presensi"),
-        fetch("/api/siswa?myStudents=true"),
+        fetch("/api/jadwal?mySiswa=true"),
+        fetch("/api/mentor"),
       ]);
       if (presRes.ok) { const d = await presRes.json(); setPresensiList(d.data || []); }
-      // Fetch mentor's students from jadwal
-      const jRes = await fetch("/api/jadwal?mySiswa=true");
       if (jRes.ok) {
         const d = await jRes.json();
         const students: SiswaOption[] = [];
@@ -51,6 +55,7 @@ export default function PresensiPage() {
         }
         setSiswaOptions(students);
       }
+      if (mRes.ok) { const d = await mRes.json(); setMentorOptions(d.data || []); }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -61,14 +66,22 @@ export default function PresensiPage() {
     e.preventDefault();
     setFormLoading(true); setError(""); setSuccess("");
     try {
+      const payload: Record<string, unknown> = {
+        tanggal, jamMasuk, durasiMenit,
+        catatan: catatan || null,
+        siswaId: siswaId || null,
+      };
+      if (usePengganti && mentorPenggantiId) {
+        payload.mentorPenggantiId = mentorPenggantiId;
+      }
       const res = await fetch("/api/presensi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tanggal, jamMasuk, durasiMenit, catatan: catatan || null, siswaId: siswaId || null }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error?.message || "Gagal"); return; }
-      setSuccess("Presensi berhasil dicatat! ✅");
-      setShowForm(false); setJamMasuk(""); setCatatan(""); setSiswaId("");
+      setSuccess(usePengganti ? "Presensi berhasil dicatat dengan mentor pengganti! ✅" : "Presensi berhasil dicatat! ✅");
+      setShowForm(false); setJamMasuk(""); setCatatan(""); setSiswaId(""); setUsePengganti(false); setMentorPenggantiId("");
       fetchData();
     } catch { setError("Kesalahan jaringan"); }
     finally { setFormLoading(false); }
@@ -84,7 +97,7 @@ export default function PresensiPage() {
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, fontFamily: "var(--font-outfit), sans-serif", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <ClipboardCheck size={24} style={{ color: "var(--color-primary-500)" }} /> Presensi Kerja
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>Catat kehadiran mengajar dan pilih siswa yang diampu.</p>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>Catat kehadiran mengajar. Bisa assign mentor pengganti jika berhalangan.</p>
         </div>
         <button onClick={() => { setShowForm(!showForm); setError(""); setSuccess(""); }} style={{ padding: "0.75rem 1.25rem", fontWeight: 600, color: "white", background: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", boxShadow: "0 4px 14px rgba(13,146,85,0.35)" }}>
           {showForm ? <X size={16} /> : <Plus size={16} />} {showForm ? "Tutup" : "Catat Presensi"}
@@ -98,7 +111,6 @@ export default function PresensiPage() {
           <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1.25rem" }}>📝 Catat Presensi Baru</h3>
           <form onSubmit={handleSubmit}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
-              {/* Siswa dropdown */}
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={{ ...labelStyle, color: "var(--color-primary-700)" }}>👨‍🎓 Siswa yang Diampu *</label>
                 <select value={siswaId} onChange={(e) => setSiswaId(e.target.value)} required style={{ ...inputStyle, background: "white", borderColor: "var(--color-primary-300)" }}>
@@ -106,17 +118,11 @@ export default function PresensiPage() {
                   {siswaOptions.map((s) => <option key={s.id} value={s.id}>{s.namaLengkap} ({s.jenjang}-{s.kelas})</option>)}
                 </select>
                 {siswaOptions.length === 0 && !loading && (
-                  <p style={{ fontSize: "0.75rem", color: "#f59e0b", marginTop: "0.25rem" }}>Belum ada siswa yang di-assign admin. Hubungi admin.</p>
+                  <p style={{ fontSize: "0.75rem", color: "#f59e0b", marginTop: "0.25rem" }}>Belum ada siswa yang di-assign admin.</p>
                 )}
               </div>
-              <div>
-                <label style={labelStyle}>Tanggal</label>
-                <input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>Jam Masuk *</label>
-                <input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} required style={inputStyle} />
-              </div>
+              <div><label style={labelStyle}>Tanggal</label><input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required style={inputStyle} /></div>
+              <div><label style={labelStyle}>Jam Masuk *</label><input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} required style={inputStyle} /></div>
               <div>
                 <label style={labelStyle}>Durasi *</label>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -130,14 +136,47 @@ export default function PresensiPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Mentor Pengganti Toggle */}
+              <div style={{ gridColumn: "1 / -1" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: usePengganti ? "0.75rem" : 0 }}>
+                  <button type="button" onClick={() => { setUsePengganti(!usePengganti); if (usePengganti) setMentorPenggantiId(""); }}
+                    style={{
+                      padding: "0.5rem 1rem", borderRadius: "10px", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                      border: `2px solid ${usePengganti ? "#f59e0b" : "var(--color-neutral-200)"}`,
+                      background: usePengganti ? "#fffbeb" : "white",
+                      color: usePengganti ? "#92400e" : "var(--text-secondary)",
+                      display: "flex", alignItems: "center", gap: "0.5rem",
+                    }}>
+                    <ArrowRightLeft size={14} /> {usePengganti ? "Mentor Pengganti Aktif" : "Berhalangan? Assign Mentor Pengganti"}
+                  </button>
+                </div>
+                {usePengganti && (
+                  <div style={{ padding: "1rem", background: "#fffbeb", border: "2px solid #fde68a", borderRadius: "12px" }}>
+                    <label style={{ ...labelStyle, color: "#92400e" }}>
+                      <UserCheck size={14} style={{ display: "inline", marginRight: "0.375rem" }} />
+                      Mentor Pengganti *
+                    </label>
+                    <select value={mentorPenggantiId} onChange={(e) => setMentorPenggantiId(e.target.value)} required={usePengganti} style={{ ...inputStyle, background: "white", borderColor: "#fde68a" }}>
+                      <option value="">Pilih mentor pengganti...</option>
+                      {mentorOptions.map((m) => <option key={m.id} value={m.id}>{m.nama}</option>)}
+                    </select>
+                    <p style={{ fontSize: "0.75rem", color: "#92400e", marginTop: "0.375rem" }}>
+                      ⚠️ Presensi & honor akan dihitung ke mentor pengganti, bukan Anda.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Catatan</label>
                 <input value={catatan} onChange={(e) => setCatatan(e.target.value)} style={inputStyle} placeholder="Materi yang diajarkan..." />
               </div>
             </div>
             {error && <div style={{ padding: "0.75rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "12px", color: "#dc2626", fontSize: "0.875rem", marginBottom: "1rem" }}>{error}</div>}
-            <button type="submit" disabled={formLoading} style={{ padding: "0.75rem 1.5rem", fontWeight: 700, color: "white", background: formLoading ? "var(--color-neutral-400)" : "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: formLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              {formLoading ? <Loader2 size={16} className="animate-spin" /> : <ClipboardCheck size={16} />} {formLoading ? "Menyimpan..." : "Simpan Presensi"}
+            <button type="submit" disabled={formLoading} style={{ padding: "0.75rem 1.5rem", fontWeight: 700, color: "white", background: formLoading ? "var(--color-neutral-400)" : usePengganti ? "linear-gradient(135deg, #f59e0b, #d97706)" : "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))", border: "none", borderRadius: "12px", cursor: formLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              {formLoading ? <Loader2 size={16} className="animate-spin" /> : <ClipboardCheck size={16} />}
+              {formLoading ? "Menyimpan..." : usePengganti ? "Simpan (Mentor Pengganti)" : "Simpan Presensi"}
             </button>
           </form>
         </div>
@@ -154,11 +193,11 @@ export default function PresensiPage() {
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Belum ada presensi bulan ini.</div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: "600px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: "700px" }}>
               <thead>
                 <tr style={{ background: "var(--bg-secondary)" }}>
-                  {["Tanggal", "Hari", "Siswa", "Jam", "Durasi", "Catatan"].map((h) => (
-                    <th key={h} style={{ padding: "0.625rem 0.875rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                  {["Tanggal", "Hari", "Siswa", "Jam", "Durasi", "Pengganti", "Catatan"].map((h) => (
+                    <th key={h} style={{ padding: "0.625rem 0.75rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -166,19 +205,22 @@ export default function PresensiPage() {
                 {presensiList.map((p) => {
                   const d = new Date(p.tanggal);
                   return (
-                    <tr key={p.id} style={{ borderBottom: "1px solid var(--color-neutral-100)" }}>
-                      <td style={{ padding: "0.625rem 0.875rem", fontWeight: 500 }}>{d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</td>
-                      <td style={{ padding: "0.625rem 0.875rem", color: "var(--text-secondary)" }}>{d.toLocaleDateString("id-ID", { weekday: "long" })}</td>
-                      <td style={{ padding: "0.625rem 0.875rem" }}>
-                        {p.siswa ? (
-                          <span style={{ padding: "0.15rem 0.5rem", background: "#ede9fe", color: "#6d28d9", borderRadius: "6px", fontWeight: 600, fontSize: "0.75rem" }}>
-                            {p.siswa.namaLengkap}
+                    <tr key={p.id} style={{ borderBottom: "1px solid var(--color-neutral-100)", background: p.mentorPengganti ? "#fffbeb" : "transparent" }}>
+                      <td style={{ padding: "0.625rem 0.75rem", fontWeight: 500 }}>{d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</td>
+                      <td style={{ padding: "0.625rem 0.75rem", color: "var(--text-secondary)" }}>{d.toLocaleDateString("id-ID", { weekday: "long" })}</td>
+                      <td style={{ padding: "0.625rem 0.75rem" }}>
+                        {p.siswa ? <span style={{ padding: "0.15rem 0.5rem", background: "#ede9fe", color: "#6d28d9", borderRadius: "6px", fontWeight: 600, fontSize: "0.75rem" }}>{p.siswa.namaLengkap}</span> : <span style={{ color: "var(--text-secondary)" }}>—</span>}
+                      </td>
+                      <td style={{ padding: "0.625rem 0.75rem" }}><span style={{ padding: "0.15rem 0.5rem", background: "var(--color-primary-50)", color: "var(--color-primary-700)", borderRadius: "6px", fontWeight: 600 }}>{p.jamMasuk}</span></td>
+                      <td style={{ padding: "0.625rem 0.75rem" }}><span style={{ padding: "0.15rem 0.5rem", background: "var(--color-gold-50)", color: "var(--color-gold-700)", borderRadius: "6px", fontWeight: 600 }}>{p.durasiMenit} mnt</span></td>
+                      <td style={{ padding: "0.625rem 0.75rem" }}>
+                        {p.mentorPengganti ? (
+                          <span style={{ padding: "0.15rem 0.5rem", background: "#fef3c7", color: "#92400e", borderRadius: "6px", fontWeight: 600, fontSize: "0.75rem" }}>
+                            ↗ {p.mentorPengganti.nama}
                           </span>
                         ) : <span style={{ color: "var(--text-secondary)" }}>—</span>}
                       </td>
-                      <td style={{ padding: "0.625rem 0.875rem" }}><span style={{ padding: "0.15rem 0.5rem", background: "var(--color-primary-50)", color: "var(--color-primary-700)", borderRadius: "6px", fontWeight: 600 }}>{p.jamMasuk}</span></td>
-                      <td style={{ padding: "0.625rem 0.875rem" }}><span style={{ padding: "0.15rem 0.5rem", background: "var(--color-gold-50)", color: "var(--color-gold-700)", borderRadius: "6px", fontWeight: 600 }}>{p.durasiMenit} mnt</span></td>
-                      <td style={{ padding: "0.625rem 0.875rem", color: "var(--text-secondary)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.catatan || "—"}</td>
+                      <td style={{ padding: "0.625rem 0.75rem", color: "var(--text-secondary)", maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.catatan || "—"}</td>
                     </tr>
                   );
                 })}

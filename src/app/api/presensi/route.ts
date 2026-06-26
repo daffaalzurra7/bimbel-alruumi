@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { id: true, nama: true, email: true } },
         siswa: { select: { id: true, namaLengkap: true, jenjang: true, kelas: true } },
+        mentorPengganti: { select: { id: true, nama: true } },
       },
     });
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) return NextResponse.json({ success: false, error: { code: "UNAUTHENTICATED", message: "Silakan login" } }, { status: 401 });
 
     const body = await req.json();
-    const { tanggal, jamMasuk, durasiMenit, catatan, siswaId } = body;
+    const { tanggal, jamMasuk, durasiMenit, catatan, siswaId, mentorPenggantiId } = body;
 
     if (!tanggal || !jamMasuk || !durasiMenit) {
       return NextResponse.json({ success: false, error: { code: "VALIDATION_ERROR", message: "Tanggal, jam masuk, dan durasi wajib diisi" } }, { status: 422 });
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: session.user.id,
         siswaId: siswaId || null,
+        mentorPenggantiId: mentorPenggantiId || null,
         tanggal: new Date(tanggal),
         jamMasuk,
         durasiMenit,
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
       },
       include: {
         siswa: { select: { namaLengkap: true } },
+        mentorPengganti: { select: { nama: true } },
       },
     });
 
