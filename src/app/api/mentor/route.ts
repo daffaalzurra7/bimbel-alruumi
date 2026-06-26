@@ -8,11 +8,12 @@ export async function GET() {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ success: false, error: { code: "UNAUTHENTICATED", message: "Silakan login" } }, { status: 401 });
     const isAdmin = (session.user as { role: string }).role === "ADMIN";
-    if (!isAdmin) return NextResponse.json({ success: false, error: { code: "FORBIDDEN", message: "Hanya admin" } }, { status: 403 });
 
     const data = await prisma.user.findMany({
-      where: { role: "MENTOR", deletedAt: null },
-      select: { id: true, nama: true, email: true, noHp: true, alamat: true, isAktif: true, createdAt: true },
+      where: { role: "MENTOR", deletedAt: null, isAktif: true },
+      select: isAdmin
+        ? { id: true, nama: true, email: true, noHp: true, alamat: true, isAktif: true, createdAt: true }
+        : { id: true, nama: true },
       orderBy: { nama: "asc" },
     });
     return NextResponse.json({ success: true, data });
