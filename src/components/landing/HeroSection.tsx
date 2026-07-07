@@ -1,15 +1,46 @@
 "use client";
 
-import { ArrowRight, MessageCircle, Users, Award, Clock } from "lucide-react";
+import { ArrowRight, MessageCircle, Users, Award, Clock, Star } from "lucide-react";
 
-const stats = [
-  { icon: Users, value: "500+", label: "Siswa Aktif" },
-  { icon: Award, value: "50+", label: "Mentor Profesional" },
-  { icon: Clock, value: "5+", label: "Tahun Berpengalaman" },
-];
+// Icon lookup map
+const iconMap: Record<string, React.ElementType> = { Users, Award, Clock, Star };
 
-export default function HeroSection() {
-  const waNumber = "6285640817894";
+// Default content — used when CMS data is not available
+const DEFAULTS = {
+  badge_text: "Bimbingan Belajar dengan Nilai Islami",
+  headline: "Bimbing Masa Depan Cemerlang Putra-Putri Anda",
+  headline_highlight: "Cemerlang",
+  subheadline:
+    "Bimbel Al Ruumi hadir dengan metode pembelajaran yang efektif, mentor berakhlak mulia, dan pendekatan Islami yang membentuk akhlakul karimah serta cemerlang dalam pembelajaran.",
+  wa_number: "6285640817894",
+  wa_message:
+    "Assalamualaikum, saya ingin mendaftarkan anak saya di Bimbel Al Ruumi. Mohon informasi lebih lanjut.",
+  cta_primary: "Daftar via WhatsApp",
+  cta_secondary: "Lihat Program",
+  stats: [
+    { icon: "Users", value: "500+", label: "Siswa Aktif" },
+    { icon: "Award", value: "50+", label: "Mentor Profesional" },
+    { icon: "Clock", value: "5+", label: "Tahun Berpengalaman" },
+  ],
+};
+
+interface HeroProps {
+  content?: Record<string, unknown>;
+}
+
+export default function HeroSection({ content = {} }: HeroProps) {
+  const get = (key: string) => (content[key] !== undefined ? content[key] : DEFAULTS[key as keyof typeof DEFAULTS]);
+
+  const waNumber = String(get("wa_number"));
+  const waMessage = String(get("wa_message"));
+  const headline = String(get("headline"));
+  const highlight = String(get("headline_highlight"));
+  const stats = (get("stats") || []) as Array<{ icon: string; value: string; label: string }>;
+
+  // Split headline around highlight word
+  const highlightIndex = headline.indexOf(highlight);
+  const beforeHighlight = highlightIndex >= 0 ? headline.substring(0, highlightIndex) : headline;
+  const afterHighlight = highlightIndex >= 0 ? headline.substring(highlightIndex + highlight.length) : "";
 
   return (
     <section
@@ -89,7 +120,7 @@ export default function HeroSection() {
           }}
         >
           <span style={{ fontSize: "1rem" }}>🕌</span>
-          Bimbingan Belajar dengan Nilai Islami
+          {String(get("badge_text"))}
         </div>
 
         {/* Headline */}
@@ -106,18 +137,20 @@ export default function HeroSection() {
             animationDelay: "0.1s",
           }}
         >
-          Bimbing Masa Depan{" "}
-          <span
-            style={{
-              background: "linear-gradient(135deg, #fcd34d, #f9bc24, #d4930c)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Cemerlang
-          </span>{" "}
-          Putra-Putri Anda
+          {beforeHighlight}
+          {highlightIndex >= 0 && (
+            <span
+              style={{
+                background: "linear-gradient(135deg, #fcd34d, #f9bc24, #d4930c)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              {highlight}
+            </span>
+          )}
+          {afterHighlight && ` ${afterHighlight.trim()}`}
         </h1>
 
         {/* Subheadline */}
@@ -132,9 +165,7 @@ export default function HeroSection() {
             animationDelay: "0.2s",
           }}
         >
-          Bimbel Al Ruumi hadir dengan metode pembelajaran yang efektif,
-          mentor berakhlak mulia, dan pendekatan Islami yang membentuk akhlakul karimah
-          serta cemerlang dalam pembelajaran.
+          {String(get("subheadline"))}
         </p>
 
         {/* CTA Buttons */}
@@ -150,23 +181,21 @@ export default function HeroSection() {
           }}
         >
           <a
-            href={`https://wa.me/${waNumber}?text=${encodeURIComponent(
-              "Assalamualaikum, saya ingin mendaftarkan anak saya di Bimbel Al Ruumi. Mohon informasi lebih lanjut."
-            )}`}
+            href={`https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-wa"
             style={{ fontSize: "1rem", padding: "0.875rem 2rem" }}
           >
             <MessageCircle size={20} />
-            Daftar via WhatsApp
+            {String(get("cta_primary"))}
           </a>
           <a
             href="#program"
             className="btn btn-outline"
             style={{ fontSize: "1rem", padding: "0.875rem 2rem" }}
           >
-            Lihat Program
+            {String(get("cta_secondary"))}
             <ArrowRight size={18} />
           </a>
         </div>
@@ -186,45 +215,48 @@ export default function HeroSection() {
             animationDelay: "0.4s",
           }}
         >
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              style={{
-                flex: "1 1 160px",
-                padding: "1.5rem 2.5rem",
-                textAlign: "center",
-                background: "rgba(255,255,255,0.05)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              <stat.icon
-                size={24}
-                style={{ color: "#fcd34d", marginBottom: "0.25rem" }}
-              />
-              <span
+          {stats.map((stat, index) => {
+            const IconComp = iconMap[stat.icon] || Users;
+            return (
+              <div
+                key={index}
                 style={{
-                  fontSize: "1.75rem",
-                  fontWeight: 800,
-                  color: "white",
-                  fontFamily: "var(--font-outfit), sans-serif",
+                  flex: "1 1 160px",
+                  padding: "1.5rem 2.5rem",
+                  textAlign: "center",
+                  background: "rgba(255,255,255,0.05)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.5rem",
                 }}
               >
-                {stat.value}
-              </span>
-              <span
-                style={{
-                  fontSize: "0.8125rem",
-                  color: "rgba(255,255,255,0.6)",
-                  fontWeight: 500,
-                }}
-              >
-                {stat.label}
-              </span>
-            </div>
-          ))}
+                <IconComp
+                  size={24}
+                  style={{ color: "#fcd34d", marginBottom: "0.25rem" }}
+                />
+                <span
+                  style={{
+                    fontSize: "1.75rem",
+                    fontWeight: 800,
+                    color: "white",
+                    fontFamily: "var(--font-outfit), sans-serif",
+                  }}
+                >
+                  {stat.value}
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.8125rem",
+                    color: "rgba(255,255,255,0.6)",
+                    fontWeight: 500,
+                  }}
+                >
+                  {stat.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -3,53 +3,26 @@
 import { useState } from "react";
 import { ChevronDown, ScrollText } from "lucide-react";
 
-const aturan = [
-  {
-    title: "Ketentuan Pendaftaran",
-    content: [
-      "Pendaftaran dilakukan melalui WhatsApp atau datang langsung ke kantor Bimbel Al Ruumi.",
-      "Orang tua/wali wajib mengisi formulir pendaftaran dengan data yang lengkap dan benar.",
-      "Biaya pendaftaran dibayarkan saat proses registrasi selesai.",
-      "Jadwal belajar disepakati bersama antara orang tua, siswa, dan pihak bimbel.",
-    ],
-  },
-  {
-    title: "Aturan Selama Belajar",
-    content: [
-      "Siswa wajib menyiapkan buku, alat tulis, dan materi yang akan dipelajari sebelum sesi dimulai.",
-      "Setiap sesi belajar diawali dengan doa bersama dan diakhiri dengan evaluasi singkat.",
-      "Siswa diharapkan mengerjakan tugas/pekerjaan rumah yang diberikan oleh mentor.",
-      "Penggunaan handphone selama sesi belajar tidak diperkenankan, kecuali untuk keperluan belajar.",
-    ],
-  },
-  {
-    title: "Ketentuan Pembayaran",
-    content: [
-      "Pembayaran SPP dilakukan di awal bulan, paling lambat tanggal 10 setiap bulannya.",
-      "Pembayaran dapat dilakukan via transfer bank atau cash ke kantor.",
-      "Bukti pembayaran wajib dikirim melalui WhatsApp untuk verifikasi.",
-      "Keterlambatan pembayaran lebih dari 15 hari akan dikenakan notifikasi pengingat.",
-    ],
-  },
-  {
-    title: "Kebijakan Izin & Penggantian Jadwal",
-    content: [
-      "Jika siswa berhalangan hadir, orang tua wajib menginformasikan minimal 3 jam sebelum jadwal.",
-      "Penggantian jadwal dapat dilakukan maksimal 2 kali dalam sebulan.",
-      "Ketidakhadiran tanpa pemberitahuan (alpa) tidak mendapat penggantian jadwal.",
-      "Mentor yang berhalangan akan diganti oleh mentor pengganti yang setara.",
-    ],
-  },
-  {
-    title: "Hak & Kewajiban Orang Tua",
-    content: [
-      "Orang tua berhak mendapatkan laporan perkembangan belajar anak secara berkala.",
-      "Orang tua berhak memberikan masukan dan evaluasi terhadap kinerja mentor.",
-      "Orang tua wajib menyediakan tempat belajar yang kondusif di rumah.",
-      "Komunikasi antara orang tua dan pihak bimbel dilakukan melalui WhatsApp resmi.",
-    ],
-  },
+interface AturanItem {
+  title: string;
+  content: string[];
+}
+
+const DEFAULT_ITEMS: AturanItem[] = [
+  { title: "Ketentuan Pendaftaran", content: ["Pendaftaran dilakukan melalui WhatsApp atau datang langsung ke kantor Bimbel Al Ruumi.", "Orang tua/wali wajib mengisi formulir pendaftaran dengan data yang lengkap dan benar.", "Biaya pendaftaran dibayarkan saat proses registrasi selesai.", "Jadwal belajar disepakati bersama antara orang tua, siswa, dan pihak bimbel."] },
+  { title: "Aturan Selama Belajar", content: ["Siswa wajib menyiapkan buku, alat tulis, dan materi yang akan dipelajari sebelum sesi dimulai.", "Setiap sesi belajar diawali dengan doa bersama dan diakhiri dengan evaluasi singkat.", "Siswa diharapkan mengerjakan tugas/pekerjaan rumah yang diberikan oleh mentor.", "Penggunaan handphone selama sesi belajar tidak diperkenankan, kecuali untuk keperluan belajar."] },
+  { title: "Ketentuan Pembayaran", content: ["Pembayaran SPP dilakukan di awal bulan, paling lambat tanggal 10 setiap bulannya.", "Pembayaran dapat dilakukan via transfer bank atau cash ke kantor.", "Bukti pembayaran wajib dikirim melalui WhatsApp untuk verifikasi.", "Keterlambatan pembayaran lebih dari 15 hari akan dikenakan notifikasi pengingat."] },
+  { title: "Kebijakan Izin & Penggantian Jadwal", content: ["Jika siswa berhalangan hadir, orang tua wajib menginformasikan minimal 3 jam sebelum jadwal.", "Penggantian jadwal dapat dilakukan maksimal 2 kali dalam sebulan.", "Ketidakhadiran tanpa pemberitahuan (alpa) tidak mendapat penggantian jadwal.", "Mentor yang berhalangan akan diganti oleh mentor pengganti yang setara."] },
+  { title: "Hak & Kewajiban Orang Tua", content: ["Orang tua berhak mendapatkan laporan perkembangan belajar anak secara berkala.", "Orang tua berhak memberikan masukan dan evaluasi terhadap kinerja mentor.", "Orang tua wajib menyediakan tempat belajar yang kondusif di rumah.", "Komunikasi antara orang tua dan pihak bimbel dilakukan melalui WhatsApp resmi."] },
 ];
+
+const DEFAULTS = {
+  section_badge: "Ketentuan",
+  section_title: "Aturan & Ketentuan",
+  section_title_highlight: "Ketentuan",
+  section_subtitle: "Aturan yang kami terapkan demi kelancaran dan kualitas proses belajar mengajar",
+  items: DEFAULT_ITEMS,
+};
 
 function AccordionItem({
   item,
@@ -57,7 +30,7 @@ function AccordionItem({
   onToggle,
   index,
 }: {
-  item: (typeof aturan)[0];
+  item: AturanItem;
   isOpen: boolean;
   onToggle: () => void;
   index: number;
@@ -187,8 +160,21 @@ function AccordionItem({
   );
 }
 
-export default function AturanSection() {
+interface AturanProps {
+  content?: Record<string, unknown>;
+}
+
+export default function AturanSection({ content = {} }: AturanProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const get = (key: string) => (content[key] !== undefined ? content[key] : DEFAULTS[key as keyof typeof DEFAULTS]);
+
+  const items = (get("items") || DEFAULT_ITEMS) as AturanItem[];
+  const sectionTitle = String(get("section_title"));
+  const highlight = String(get("section_title_highlight"));
+
+  const parts = sectionTitle.split(highlight);
+  const before = parts[0]?.trim() || "";
 
   return (
     <section id="aturan" className="section" style={{ background: "var(--bg-primary)" }}>
@@ -197,26 +183,25 @@ export default function AturanSection() {
         <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
           <div className="section-badge">
             <ScrollText size={14} />
-            Ketentuan
+            {String(get("section_badge"))}
           </div>
           <h2 className="section-title">
-            Aturan &{" "}
+            {before}{" "}
             <span
               className="gold-underline"
               style={{ color: "var(--color-primary-600)" }}
             >
-              Ketentuan
+              {highlight}
             </span>
           </h2>
           <p className="section-subtitle">
-            Aturan yang kami terapkan demi kelancaran dan kualitas proses
-            belajar mengajar
+            {String(get("section_subtitle"))}
           </p>
         </div>
 
         {/* Accordion */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {aturan.map((item, index) => (
+          {items.map((item, index) => (
             <AccordionItem
               key={index}
               item={item}

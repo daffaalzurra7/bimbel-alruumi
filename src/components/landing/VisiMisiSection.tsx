@@ -2,7 +2,33 @@
 
 import { Eye, Target, Sparkles, Heart } from "lucide-react";
 
-export default function VisiMisiSection() {
+const DEFAULTS = {
+  section_badge: "Landasan Kami",
+  section_title: "Visi & Misi",
+  section_title_highlight: "Misi",
+  section_subtitle: "Membangun generasi yang unggul dalam ilmu pengetahuan dan berkarakter Islami",
+  visi_text:
+    "Menjadi lembaga bimbingan belajar terdepan yang menghasilkan generasi berprestasi akademik tinggi, berkarakter mulia, dan berakhlak Islami. Kami berkomitmen mencetak siswa yang siap menghadapi tantangan masa depan dengan bekal ilmu dan iman.",
+  misi_items: [
+    "Menyediakan mentor berkualitas & berdedikasi",
+    "Menerapkan kurikulum yang efektif & terkini",
+    "Membangun karakter Islami pada setiap siswa",
+    "Memberikan laporan perkembangan transparan",
+    "Menjadi mitra terpercaya bagi orang tua",
+  ],
+};
+
+interface VisiMisiProps {
+  content?: Record<string, unknown>;
+}
+
+export default function VisiMisiSection({ content = {} }: VisiMisiProps) {
+  const get = (key: string) => (content[key] !== undefined ? content[key] : DEFAULTS[key as keyof typeof DEFAULTS]);
+
+  const sectionTitle = String(get("section_title"));
+  const highlight = String(get("section_title_highlight"));
+  const misiItems = (get("misi_items") || []) as string[];
+
   return (
     <section id="visi-misi" className="section" style={{ background: "var(--bg-primary)" }}>
       <div className="container-custom">
@@ -10,16 +36,16 @@ export default function VisiMisiSection() {
         <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
           <div className="section-badge">
             <Sparkles size={14} />
-            Landasan Kami
+            {String(get("section_badge"))}
           </div>
           <h2 className="section-title">
-            Visi &{" "}
+            {sectionTitle.replace(highlight, "").trim()}{" "}
             <span className="gold-underline" style={{ color: "var(--color-primary-600)" }}>
-              Misi
+              {highlight}
             </span>
           </h2>
           <p className="section-subtitle">
-            Membangun generasi yang unggul dalam ilmu pengetahuan dan berkarakter Islami
+            {String(get("section_subtitle"))}
           </p>
         </div>
 
@@ -88,10 +114,7 @@ export default function VisiMisiSection() {
                 lineHeight: 1.8,
               }}
             >
-              Menjadi lembaga bimbingan belajar terdepan yang menghasilkan generasi 
-              berprestasi akademik tinggi, berkarakter mulia, dan berakhlak Islami. 
-              Kami berkomitmen mencetak siswa yang siap menghadapi tantangan masa depan 
-              dengan bekal ilmu dan iman.
+              {String(get("visi_text"))}
             </p>
           </div>
 
@@ -152,13 +175,7 @@ export default function VisiMisiSection() {
                 padding: 0,
               }}
             >
-              {[
-                "Menyediakan mentor berkualitas & berdedikasi",
-                "Menerapkan kurikulum yang efektif & terkini",
-                "Membangun karakter Islami pada setiap siswa",
-                "Memberikan laporan perkembangan transparan",
-                "Menjadi mitra terpercaya bagi orang tua",
-              ].map((item, i) => (
+              {misiItems.map((item, i) => (
                 <li
                   key={i}
                   style={{

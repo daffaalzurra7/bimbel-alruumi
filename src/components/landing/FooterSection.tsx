@@ -2,16 +2,42 @@
 
 import Image from "next/image";
 import {
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
-  Globe,
-  Video,
+  MapPin, Phone, Mail, Clock, Globe, Video,
 } from "lucide-react";
 
-export default function FooterSection() {
+// Icon lookup
+const iconMap: Record<string, React.ElementType> = { MapPin, Phone, Mail, Clock, Globe, Video };
+
+interface ContactItem { icon: string; text: string; }
+interface SocialLink { icon: string; href: string; label: string; }
+
+const DEFAULTS = {
+  description: "Bimbel Al Ruumi hadir sebagai mitra terpercaya dalam membimbing putra-putri Anda belajar dengan landasan nilai Islami.",
+  contact_info: [
+    { icon: "MapPin", text: "Jl. Contoh Alamat No. 123, Bekasi, Jawa Barat" },
+    { icon: "Phone", text: "+62 812-3456-7890" },
+    { icon: "Mail", text: "info@bimbelalruumi.com" },
+    { icon: "Clock", text: "Senin - Sabtu, 08:00 - 20:00 WIB" },
+  ],
+  social_links: [
+    { icon: "Globe", href: "#", label: "Instagram" },
+    { icon: "Video", href: "#", label: "YouTube" },
+  ],
+  map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126920.29600791963!2d106.82497!3d-6.2297!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f3e945e34b9d%3A0x5371bf0fdad786a2!2sBekasi!5e0!3m2!1sid!2sid!4v1",
+  copyright_extra: "Dibuat dengan ❤️ untuk pendidikan Indonesia",
+};
+
+interface FooterProps {
+  content?: Record<string, unknown>;
+}
+
+export default function FooterSection({ content = {} }: FooterProps) {
+  const get = (key: string) => (content[key] !== undefined ? content[key] : DEFAULTS[key as keyof typeof DEFAULTS]);
+
   const currentYear = new Date().getFullYear();
+  const contacts = (get("contact_info") || []) as ContactItem[];
+  const socials = (get("social_links") || []) as SocialLink[];
+  const mapUrl = String(get("map_embed_url") || "");
 
   return (
     <footer
@@ -105,9 +131,7 @@ export default function FooterSection() {
                 maxWidth: "300px",
               }}
             >
-              Bimbel Al Ruumi hadir sebagai mitra terpercaya dalam membimbing
-              putra-putri Anda belajar dengan landasan nilai
-              Islami.
+              {String(get("description"))}
             </p>
 
             {/* Social Links */}
@@ -118,41 +142,41 @@ export default function FooterSection() {
                 marginTop: "1.5rem",
               }}
             >
-              {[
-                { icon: Globe, href: "#", label: "Instagram" },
-                { icon: Video, href: "#", label: "YouTube" },
-              ].map((social, i) => (
-                <a
-                  key={i}
-                  href={social.href}
-                  aria-label={social.label}
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "10px",
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "rgba(255,255,255,0.6)",
-                    textDecoration: "none",
-                    transition: "all 0.3s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.15)";
-                    e.currentTarget.style.color = "white";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-                    e.currentTarget.style.color = "rgba(255,255,255,0.6)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  <social.icon size={18} />
-                </a>
-              ))}
+              {socials.map((social, i) => {
+                const SocialIcon = iconMap[social.icon] || Globe;
+                return (
+                  <a
+                    key={i}
+                    href={social.href}
+                    aria-label={social.label}
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "10px",
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "rgba(255,255,255,0.6)",
+                      textDecoration: "none",
+                      transition: "all 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.15)";
+                      e.currentTarget.style.color = "white";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.6)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    <SocialIcon size={18} />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -176,42 +200,37 @@ export default function FooterSection() {
                 gap: "1rem",
               }}
             >
-              {[
-                {
-                  icon: MapPin,
-                  text: "Jl. Contoh Alamat No. 123, Bekasi, Jawa Barat",
-                },
-                { icon: Phone, text: "+62 812-3456-7890" },
-                { icon: Mail, text: "info@bimbelalruumi.com" },
-                { icon: Clock, text: "Senin - Sabtu, 08:00 - 20:00 WIB" },
-              ].map((contact, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "0.75rem",
-                  }}
-                >
-                  <contact.icon
-                    size={16}
+              {contacts.map((contact, i) => {
+                const ContactIcon = iconMap[contact.icon] || Phone;
+                return (
+                  <div
+                    key={i}
                     style={{
-                      color: "var(--color-primary-400)",
-                      marginTop: "3px",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "rgba(255,255,255,0.6)",
-                      lineHeight: 1.6,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.75rem",
                     }}
                   >
-                    {contact.text}
-                  </span>
-                </div>
-              ))}
+                    <ContactIcon
+                      size={16}
+                      style={{
+                        color: "var(--color-primary-400)",
+                        marginTop: "3px",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: "0.875rem",
+                        color: "rgba(255,255,255,0.6)",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {contact.text}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -270,27 +289,29 @@ export default function FooterSection() {
         </div>
 
         {/* Map Embed */}
-        <div
-          style={{
-            borderRadius: "16px",
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.08)",
-            marginBottom: "2rem",
-            height: "200px",
-            background: "rgba(255,255,255,0.03)",
-          }}
-        >
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126920.29600791963!2d106.82497!3d-6.2297!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f3e945e34b9d%3A0x5371bf0fdad786a2!2sBekasi!5e0!3m2!1sid!2sid!4v1"
-            width="100%"
-            height="200"
-            style={{ border: 0, filter: "grayscale(0.3) brightness(0.8)" }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Lokasi Bimbel Al Ruumi"
-          />
-        </div>
+        {mapUrl && (
+          <div
+            style={{
+              borderRadius: "16px",
+              overflow: "hidden",
+              border: "1px solid rgba(255,255,255,0.08)",
+              marginBottom: "2rem",
+              height: "200px",
+              background: "rgba(255,255,255,0.03)",
+            }}
+          >
+            <iframe
+              src={mapUrl}
+              width="100%"
+              height="200"
+              style={{ border: 0, filter: "grayscale(0.3) brightness(0.8)" }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Lokasi Bimbel Al Ruumi"
+            />
+          </div>
+        )}
 
         {/* Bottom bar */}
         <div
@@ -318,7 +339,7 @@ export default function FooterSection() {
               color: "rgba(255,255,255,0.4)",
             }}
           >
-            Dibuat dengan ❤️ untuk pendidikan Indonesia
+            {String(get("copyright_extra"))}
           </p>
         </div>
       </div>

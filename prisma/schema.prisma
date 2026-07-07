@@ -291,3 +291,17 @@ model BonusMentor {
   @@index([bulan, tahun])
   @@map("bonus_mentor")
 }
+
+// CMS — Key-value store for landing page content
+model SiteContent {
+  id         String   @id @default(cuid())
+  section    String   // "hero", "visi_misi", "program", "keunggulan", "aturan", "footer"
+  key        String   // "headline", "subheadline", "stats", etc.
+  value      Json     // The actual content (text, array, or object)
+  updatedAt  DateTime @updatedAt
+  updatedBy  String?
+
+  @@unique([section, key])
+  @@index([section])
+  @@map("site_content")
+}

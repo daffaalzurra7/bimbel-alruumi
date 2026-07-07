@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Home, ClipboardCheck, Users, FileText, BookMarked,
   UserCog, GraduationCap, Calendar, CreditCard, BarChart3,
-  ChevronLeft, X,
+  ChevronLeft, X, PenLine,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -30,6 +30,7 @@ const adminMenu = [
   { href: "/dashboard/admin/jadwal", label: "Kelola Jadwal", icon: Calendar },
   { href: "/dashboard/admin/pembayaran", label: "Pembayaran", icon: CreditCard },
   { href: "/dashboard/admin/laporan", label: "Laporan & Presensi", icon: BarChart3 },
+  { href: "/dashboard/admin/cms", label: "Kelola Konten", icon: PenLine },
 ];
 
 export default function Sidebar({ role, isCollapsed, onToggle }: SidebarProps) {

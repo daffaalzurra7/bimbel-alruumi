@@ -2,13 +2,17 @@
 
 import { MessageCircle } from "lucide-react";
 
-export default function FloatingWhatsApp() {
-  const waNumber = "6285640817894";
+interface FloatingWhatsAppProps {
+  waNumber?: string;
+}
+
+export default function FloatingWhatsApp({ waNumber }: FloatingWhatsAppProps) {
+  const number = waNumber || "6285640817894";
 
   return (
     <a
       id="floating-whatsapp"
-      href={`https://wa.me/${waNumber}?text=${encodeURIComponent(
+      href={`https://wa.me/${number}?text=${encodeURIComponent(
         "Assalamualaikum, saya ingin bertanya tentang Bimbel Al Ruumi."
       )}`}
       target="_blank"
