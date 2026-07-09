@@ -43,6 +43,11 @@ enum StatusPembayaran {
   DITOLAK
 }
 
+enum StatusPembayaranMentor {
+  BELUM_DIBAYAR
+  SUDAH_DIBAYAR
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -66,6 +71,7 @@ model User {
   jadwalMentor    Jadwal[]           @relation("MentorJadwal")
   catatanBulanan  CatatanMentorBulanan[]
   bonusMentor     BonusMentor[]
+  pembayaranMentor PembayaranMentor[]
 
   @@index([role])
   @@index([isAktif])
@@ -290,6 +296,29 @@ model BonusMentor {
   @@index([mentorId])
   @@index([bulan, tahun])
   @@map("bonus_mentor")
+}
+
+// Pembayaran Honor Mentor
+model PembayaranMentor {
+  id          String                @id @default(cuid())
+  mentorId    String
+  bulan       Int
+  tahun       Int
+  totalHonor  Decimal               @db.Decimal(12, 2) // Kalkulasi honor saat dibuat
+  jumlahDibayar Decimal             @default(0) @db.Decimal(12, 2)
+  status      StatusPembayaranMentor @default(BELUM_DIBAYAR)
+  catatan     String?
+  dibayarAt   DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  mentor      User                  @relation(fields: [mentorId], references: [id])
+
+  @@unique([mentorId, bulan, tahun])
+  @@index([mentorId])
+  @@index([bulan, tahun])
+  @@index([status])
+  @@map("pembayaran_mentor")
 }
 
 // CMS — Key-value store for landing page content
