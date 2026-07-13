@@ -18,9 +18,9 @@ const DEFAULTS = {
   cta_primary: "Daftar via WhatsApp",
   cta_secondary: "Lihat Program",
   stats: [
-    { icon: "Users", value: "500+", label: "Siswa Aktif" },
-    { icon: "Award", value: "50+", label: "Mentor Profesional" },
-    { icon: "Clock", value: "5+", label: "Tahun Berpengalaman" },
+    { icon: "Users", value: "50", label: "Siswa Aktif" },
+    { icon: "Award", value: "15+", label: "Mentor Profesional" },
+    { icon: "Clock", value: "2+", label: "Tahun Berpengalaman" },
   ],
 };
 
